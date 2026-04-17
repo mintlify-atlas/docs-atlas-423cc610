@@ -1,0 +1,75 @@
+---
+title: "Connect Cyberduck to Backblaze B2 cloud object storage"
+description: "Connect Cyberduck to Backblaze B2 using application key credentials, manage buckets, and use Multi-Bucket Application Keys or the S3-compatible API."
+---
+
+Backblaze B2 Cloud Storage is a cost-effective object storage service. Cyberduck uses the native B2 API over HTTPS at `api.backblazeb2.com`. You authenticate with a B2 Application Key rather than a username and password.
+
+## Prerequisites
+
+- A Backblaze account with at least one B2 bucket.
+- An **Application Key** generated in the Backblaze web console (under **App Keys**).
+
+## Connection setup
+
+<Steps>
+  <Step title="Open a new connection">
+    Click **Open Connection** or press `⌘O` / `Ctrl+O`.
+  </Step>
+  <Step title="Select the protocol">
+    Choose **Backblaze B2** from the protocol dropdown. The server is fixed to `api.backblazeb2.com` and cannot be changed.
+  </Step>
+  <Step title="Enter your Application Key credentials">
+    - **Account ID or Key ID** — Enter your B2 Account ID (a 12-character string) when using a master key, or the **keyId** of a specific Application Key.
+    - **Application Key** — Enter the application key secret.
+  </Step>
+  <Step title="Connect">
+    Click **Connect**. Cyberduck lists all buckets the key has access to.
+  </Step>
+</Steps>
+
+<Note>
+  B2 Application Key secrets are shown only once at creation time. Store the secret in a password manager before closing the Backblaze console.
+</Note>
+
+## Multi-Bucket Application Keys
+
+Since Cyberduck 9.3, you can connect with Multi-Bucket Application Keys that grant access to a specific group of buckets within an account, including the option to limit access based on a single file name prefix.
+
+To create a Multi-Bucket key in the Backblaze console:
+
+1. Navigate to **My Account → App Keys → Add a New Application Key**.
+2. Under **Allow access to Bucket(s)**, select **All** or choose specific buckets.
+3. Optionally, set a **File name prefix** to restrict access to objects with a matching prefix.
+4. Set capability flags (read, write, delete, listBuckets, etc.) and a TTL if needed.
+5. Copy the resulting **keyId** and **applicationKey** into Cyberduck.
+
+When connecting with a key scoped to specific buckets, only those buckets are visible in Cyberduck.
+
+## Bucket management
+
+- **Create a bucket** — Click **File → New Folder** at the root level. Choose public or private visibility.
+- **Lifecycle rules** — Configure how many days B2 retains previous file versions or old files via **File → Info → B2**.
+- **Bucket type** — Private buckets require signed download URLs; public buckets allow direct HTTP access.
+
+## Large file uploads
+
+Cyberduck automatically switches to B2's large file upload API (multipart) for files above the threshold configured in preferences. Incomplete multipart uploads are listed and can be cleaned up in **File → Info → B2 → Large Uploads**.
+
+## S3-compatible API
+
+B2 exposes an S3-compatible endpoint. To use it, connect with the **Amazon S3** protocol instead of the native B2 protocol:
+
+1. Select **Amazon S3** as the protocol.
+2. Set the server to your B2 S3 endpoint, for example `s3.us-west-004.backblazeb2.com` (the exact region varies by bucket).
+3. Enter your B2 **keyId** as the Access Key ID and your **applicationKey** as the Secret Access Key.
+
+<Tip>
+  The S3-compatible endpoint enables tools and workflows that rely on the S3 API, such as rclone or s3cmd, while still using your B2 account. For Cyberduck's full native feature set (lifecycle, bucket type, large file management) use the native B2 protocol.
+</Tip>
+
+## Related
+
+- [Connect to Amazon S3 and S3-compatible storage](/protocols/s3)
+- [Bookmarks](/configuration/bookmarks)
+- [File transfers](/transfers/upload-download)

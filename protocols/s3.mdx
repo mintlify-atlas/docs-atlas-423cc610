@@ -1,0 +1,165 @@
+---
+title: "Connect Cyberduck to Amazon S3 and S3-compatible storage"
+description: "Configure Cyberduck to connect to Amazon S3 buckets using IAM credentials, SSO, STS role assumption with MFA, and S3-compatible providers."
+---
+
+Amazon S3 is the default object storage protocol in Cyberduck. You can connect with long-term IAM credentials, temporary credentials obtained through AWS CLI profiles, IAM Identity Center (SSO), or STS role assumption with optional MFA. The same protocol implementation also supports a wide range of S3-compatible storage providers.
+
+## Connection setup
+
+<Steps>
+  <Step title="Open a new connection">
+    In the browser toolbar, click **Open Connection** (or press `⌘O` on macOS / `Ctrl+O` on Windows).
+  </Step>
+  <Step title="Select the protocol">
+    Choose **Amazon S3** from the protocol dropdown. For IAM Identity Center (SSO), choose **Amazon S3 (IAM Identity Center)** instead.
+  </Step>
+  <Step title="Enter your credentials">
+    Enter your **Access Key ID** in the username field and your **Secret Access Key** in the password field. Leave both fields empty to authenticate anonymously against public buckets.
+  </Step>
+  <Step title="Connect">
+    Click **Connect**. Cyberduck lists all buckets accessible to the provided credentials.
+  </Step>
+</Steps>
+
+<Note>
+  The default server is `s3.amazonaws.com`. Cyberduck automatically detects the bucket region and redirects requests to the correct regional endpoint.
+</Note>
+
+## Authentication methods
+
+<Tabs>
+  <Tab title="IAM access keys">
+    Enter your **Access Key ID** and **Secret Access Key** directly in the connection dialog. These are long-term credentials created in the IAM console.
+
+    You can also store credentials in `~/.aws/credentials` or `~/.aws/config` and select a named profile by entering the profile name (or its associated access key ID) in the username field. Cyberduck reads both files at connection time, merging properties from both.
+  </Tab>
+  <Tab title="credential_process">
+    Cyberduck supports the `credential_process` directive in `~/.aws/config` (added in Cyberduck 9.5). When a profile defines `credential_process`, Cyberduck executes the specified command and parses the returned JSON for temporary credentials:
+
+    ```json
+    {
+      "AccessKeyId": "ASIA...",
+      "SecretAccessKey": "...",
+      "SessionToken": "...",
+      "Expiration": "2026-01-01T00:00:00Z"
+    }
+    ```
+
+    Configure your AWS CLI profile:
+
+    ```ini
+    [profile my-profile]
+    credential_process = aws-vault exec my-profile --json
+    ```
+
+    Enter `my-profile` as the username in the Cyberduck connection dialog.
+  </Tab>
+  <Tab title="IAM Identity Center (SSO)">
+    Select **Amazon S3 (IAM Identity Center)** as the protocol. Cyberduck uses OAuth 2.0 with the `sso:account:access` scope to authenticate against AWS IAM Identity Center (formerly AWS SSO).
+
+    You can also configure an SSO profile in `~/.aws/config` and use the standard **Amazon S3** profile:
+
+    ```ini
+    [profile sso-profile]
+    sso_start_url = https://my-org.awsapps.com/start
+    sso_session = my-sso
+    sso_account_id = 123456789012
+    sso_role_name = ReadAccess
+
+    [sso-session my-sso]
+    sso_start_url = https://my-org.awsapps.com/start
+    sso_region = us-east-1
+    sso_registration_scopes = sso:account:access
+    ```
+  </Tab>
+  <Tab title="STS role assumption with MFA">
+    Cyberduck supports assuming an IAM role via STS, with optional MFA, using a profile in `~/.aws/config`:
+
+    ```ini
+    [profile assume-role]
+    role_arn = arn:aws:iam::123456789012:role/MyRole
+    source_profile = base-profile
+    mfa_serial = arn:aws:iam::111111111111:mfa/my-device
+    ```
+
+    When `mfa_serial` is present, Cyberduck prompts you for the one-time token before establishing the connection. The temporary credentials obtained from STS are refreshed automatically.
+  </Tab>
+</Tabs>
+
+## Regions
+
+Cyberduck supports all current AWS regions including `us-east-1`, `eu-west-1`, `ap-northeast-1`, `af-south-1`, `me-central-1`, `mx-central-1`, and others. Region selection is handled automatically via bucket redirect responses; you do not need to pre-configure a region in the bookmark.
+
+## Storage classes
+
+When uploading files, you can select from the following storage classes in **File → Info → S3**:
+
+- `STANDARD`
+- `INTELLIGENT_TIERING`
+- `STANDARD_IA`
+- `ONEZONE_IA`
+- `REDUCED_REDUNDANCY`
+- `GLACIER`
+- `GLACIER_IR`
+- `DEEP_ARCHIVE`
+
+## Transfer Acceleration
+
+Enable S3 Transfer Acceleration for a bucket in **File → Info → S3 → Transfer Acceleration**. When enabled, Cyberduck routes upload and download traffic through CloudFront edge locations, which can significantly improve throughput for transfers over long distances.
+
+<Warning>
+  Transfer Acceleration incurs additional per-GB charges beyond standard S3 data transfer costs.
+</Warning>
+
+## Presigned URLs
+
+Generate a time-limited presigned URL for any object via **Edit → Copy URL → Signed URL**. The URL grants temporary read access to the object without requiring AWS credentials.
+
+Presigned URLs work correctly when connecting via AWS CLI connection profiles, OIDC web identity profiles, and IAM Identity Center profiles.
+
+## Versioning
+
+Enable bucket versioning in **File → Info → S3 → Versioning**. When versioning is active, Cyberduck displays previous versions of a file under **File → Info → Versions**, and you can restore any prior version by selecting it and clicking **Revert**.
+
+MFA Delete requires entering a device serial number and one-time code when permanently deleting versioned objects.
+
+## Lifecycle rules
+
+Configure object lifecycle rules per bucket in **File → Info → S3 → Lifecycle**. You can set the number of days before objects transition to a different storage class or are permanently deleted.
+
+## Server-side encryption
+
+Configure default server-side encryption for a bucket or individual objects in **File → Info → Encryption**. Cyberduck supports:
+
+- **SSE-S3 (AES-256)** — AWS-managed keys, no additional configuration required.
+- **SSE-KMS** — AWS Key Management Service. Set a custom KMS key ARN in preferences to use a customer-managed key (CMK) instead of the default AWS-managed key.
+
+## CDN / CloudFront invalidation
+
+When a CloudFront distribution is associated with an S3 bucket, Cyberduck can invalidate cached objects after upload. Configure the distribution in **File → Info → Distribution** and enable the **Invalidate** option.
+
+## S3-compatible providers
+
+Many object storage services implement the S3 API. To connect to an S3-compatible provider, use the **Amazon S3** protocol and change the server hostname to the provider endpoint:
+
+| Provider | Endpoint example |
+|---|---|
+| Wasabi | `s3.wasabisys.com` |
+| MinIO | Your MinIO server hostname |
+| Cloudflare R2 | `<account-id>.r2.cloudflarestorage.com` |
+| Backblaze B2 (S3 API) | `s3.us-west-004.backblazeb2.com` |
+| Exoscale | `sos-ch-dk-2.exo.io` |
+| DigitalOcean Spaces | `<region>.digitaloceanspaces.com` |
+| Scaleway | `s3.nl-ams.scw.cloud` |
+| Linode Object Storage | `<region>.linodeobjects.com` |
+
+<Tip>
+  Some providers supply custom `.cyberduckprofile` files that pre-configure the endpoint and any provider-specific settings. Install these from **Preferences → Profiles**.
+</Tip>
+
+## Related
+
+- [Bookmarks](/configuration/bookmarks)
+- [Cryptomator client-side encryption](/security/cryptomator)
+- [File transfers](/transfers/upload-download)

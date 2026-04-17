@@ -1,0 +1,133 @@
+---
+title: "Encrypt files on any cloud storage with Cryptomator vaults"
+description: "Use Cryptomator vaults in Cyberduck to apply end-to-end, client-side encryption to files on any cloud storage provider before they leave your device."
+---
+
+Cyberduck integrates the open-source [Cryptomator](https://cryptomator.org) library to give you transparent, client-side encryption on top of any supported cloud storage protocol. Files are encrypted on your device before they are uploaded, so the remote server never sees plaintext content or unobfuscated file names. Because Cryptomator is an open standard, vaults you create in Cyberduck are fully compatible with the Cryptomator desktop and mobile apps.
+
+## How vaults work
+
+A vault is a directory on your remote storage that contains a special metadata file — `masterkey.cryptomator` for the v8 format or `vault.uvf` for the newer UVF format — alongside a tree of encrypted, content-addressed files and directories. When a vault is unlocked, Cyberduck transparently encrypts every file you upload and decrypts every file you download. File names are also encrypted, so directory listings on the remote side are opaque to the storage provider.
+
+<Note>
+Cryptomator encryption is protocol-agnostic. The same vault can sit on Amazon S3, Backblaze B2, Dropbox, Google Drive, OneDrive, WebDAV servers, FTP servers, or any other protocol Cyberduck supports.
+</Note>
+
+## Creating a new vault
+
+<Steps>
+  <Step title="Open a remote folder in the browser">
+    Connect to your storage provider and navigate to the parent directory where you want to create the vault.
+  </Step>
+  <Step title="Open the New Encrypted Vault dialog">
+    Right-click the empty browser area (or use the **File** menu) and choose **New Encrypted Vault**. Enter a name for the vault folder.
+  </Step>
+  <Step title="Set a passphrase">
+    Enter a strong passphrase and confirm it. This passphrase is used to derive the vault's master key. Cyberduck can save it to your system keychain so you are not prompted on every connection.
+  </Step>
+  <Step title="Choose the vault version">
+    Select **Vault version 8** (classic format, compatible with Cryptomator 1.x) or **UVF** (Universal Vault Format, the newer standard). Both are supported transparently by Cyberduck.
+  </Step>
+  <Step title="Confirm creation">
+    Click **Create**. Cyberduck writes the metadata file and sets up the encrypted directory structure. The vault opens automatically and you can start uploading files.
+  </Step>
+</Steps>
+
+<Warning>
+Your passphrase is the only thing protecting the vault master key. There is no password-reset mechanism. Store it somewhere safe before closing the dialog.
+</Warning>
+
+## Opening an existing vault
+
+### Auto-detection
+
+When `cryptomator.vault.autodetect` is enabled (the default), Cyberduck scans directories you browse for recognized vault metadata files (`masterkey.cryptomator` or `vault.uvf`). When one is found, Cyberduck prompts you for the passphrase and unlocks the vault automatically.
+
+<Tip>
+Auto-detection inspects up to the first 10 items in a directory listing by default. If your vault is nested deeper, navigate into the vault's root folder directly and Cyberduck will detect it there.
+</Tip>
+
+### Manual unlock
+
+If you want to unlock a vault that was not auto-detected:
+
+<Steps>
+  <Step title="Navigate to the vault root folder">
+    Browse to the directory that contains `masterkey.cryptomator` or `vault.uvf`.
+  </Step>
+  <Step title="Right-click and choose Unlock Vault">
+    Select the vault folder in the browser, right-click, and choose **Unlock Vault**.
+  </Step>
+  <Step title="Enter the passphrase">
+    Type the passphrase and click **Unlock**. Once open, the vault behaves like any other folder.
+  </Step>
+</Steps>
+
+## Password and keychain integration
+
+When you unlock a vault, Cyberduck offers to save the passphrase in your operating system's credential store.
+
+<Tabs>
+  <Tab title="macOS">
+    Cyberduck saves vault passphrases in the macOS Keychain. The next time you unlock the same vault, the passphrase is retrieved automatically without prompting.
+  </Tab>
+  <Tab title="Windows">
+    Cyberduck saves vault passphrases in the Windows Credential Manager. Passphrases are stored per vault path and retrieved on subsequent connections.
+  </Tab>
+</Tabs>
+
+To disable keychain storage, deselect **Save password** in the passphrase prompt before clicking **Unlock**. You can also turn off keychain saving globally via the `cryptomator.vault.keychain` preference.
+
+## Browsing and uploading within a vault
+
+Once a vault is unlocked, it appears in the browser like any other folder. You can:
+
+- **Upload files and folders** by dragging them into the vault or using **File → Upload**.
+- **Download files** by selecting them and pressing **⌘D** (macOS) or dragging to Finder / Explorer.
+- **Create subfolders**, rename, move, and delete files — all operations happen transparently through the encryption layer.
+- **Search** within the vault using Cyberduck's built-in search. Cyberduck decrypts names on the fly to match your query.
+
+File sizes shown in the browser reflect the plaintext size. The actual bytes stored on the remote server are larger because each file includes an encrypted header and the content is padded to chunk boundaries.
+
+## CLI: unlocking a vault with duck
+
+When using the Cyberduck CLI (`duck`), pass the `--vault` flag with the remote path to the vault's root directory to unlock it before performing any transfer.
+
+```bash
+duck --upload sftp://user@example.com/remote/vault/path localfile.txt \
+     --vault /remote/vault
+```
+
+```bash
+duck --download sftp://user@example.com/remote/vault/notes.md ./notes.md \
+     --vault /remote/vault
+```
+
+The `--vault` flag tells `duck` where to find the vault metadata. You will be prompted for the passphrase at runtime unless it is available in the keychain or provided through another mechanism.
+
+See [CLI options reference](/cli/options) for the full list of `duck` flags.
+
+## Supported cloud providers
+
+Because Cryptomator encryption is implemented entirely on the client, it works with every protocol Cyberduck supports:
+
+- Amazon S3 and S3-compatible storage
+- Backblaze B2
+- Dropbox
+- Google Drive
+- Microsoft OneDrive and SharePoint
+- FTP and FTPS
+- SFTP
+- WebDAV (HTTP and HTTPS)
+- Azure Blob Storage
+- OpenStack Swift
+
+There are no server-side requirements. The storage provider only ever sees encrypted, obfuscated data.
+
+## Compatibility with the Cryptomator desktop app
+
+Vaults created in Cyberduck open in Cryptomator for macOS, Windows, and Linux, and vice versa. Both applications use the same `cryptomator-cryptolib` library, so the on-disk format is identical. The same passphrase unlocks the vault in either application.
+
+<Note>
+Cyberduck supports Cryptomator vault version 8 (the `masterkey.cryptomator` format used by Cryptomator 1.x) as well as the newer UVF format. If you created a vault with Cryptomator 1.x, Cyberduck opens it without any migration step.
+</Note>

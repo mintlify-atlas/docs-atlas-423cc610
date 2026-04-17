@@ -1,0 +1,318 @@
+---
+title: "Complete reference for all duck CLI flags and options"
+description: "All duck CLI flags for authentication, transfers, and output — --username, --identity, --existing, --parallel, --throttle, --vault, --verbose, --udt, and more."
+---
+
+Options are flags you combine with an [action command](/cli/commands) to control how `duck` authenticates, transfers files, and reports progress. This page covers every option available in `duck`, organized by category.
+
+<Note>
+  Options are separate from action flags. An invocation always has exactly one action (e.g., `--upload`) plus any number of options (e.g., `--username`, `--verbose`).
+</Note>
+
+## Authentication
+
+### `--username` / `-u`
+
+The username or, for S3-compatible services, the access key ID.
+
+```bash
+duck --list sftp://example.com/data/ --username alice
+```
+
+---
+
+### `--password` / `-p`
+
+The password or, for S3-compatible services, the secret access key.
+
+```bash
+duck --list sftp://example.com/data/ --username alice --password secret
+```
+
+<Warning>
+  Avoid passing passwords directly on the command line in shared or logged environments. Omit `--password` to have `duck` prompt you interactively instead.
+</Warning>
+
+---
+
+### `--identity` / `-i`
+
+Path to a private key file for public-key authentication over SFTP.
+
+**Argument:** `<private key file>`
+
+```bash
+duck --download sftp://user@example.com/file.tar.gz ./file.tar.gz \
+     --identity ~/.ssh/id_ed25519
+```
+
+---
+
+### `--anonymous`
+
+Connect without credentials. Use this for public FTP or HTTP servers that accept anonymous login.
+
+```bash
+duck --list ftp://ftp.example.com/pub/ --anonymous
+```
+
+---
+
+### `--nokeychain`
+
+Do not save or retrieve passwords from the system keychain. Credentials are used for the current session only.
+
+```bash
+duck --upload sftp://user@example.com/data/ ./data/ --nokeychain
+```
+
+---
+
+## Connection profiles
+
+### `--profile`
+
+Load a `.cyberduckprofile` file before connecting. The profile registers a custom protocol and server configuration, allowing you to use a short URL scheme instead of encoding all endpoint details in the URL.
+
+**Argument:** `<path to .cyberduckprofile file>`
+
+```bash
+duck --profile ~/minio.cyberduckprofile \
+     --list dav://minio.local/mybucket/
+```
+
+See [connection profiles](/cli/connection-profiles) for a full explanation of how to obtain and use profile files.
+
+---
+
+## Transfer behavior
+
+### `--existing` / `-e`
+
+Action to take when a file already exists at the transfer destination. If this flag is omitted and `--quiet` is not set, `duck` prompts you interactively for each conflict.
+
+**Argument:** `<action>`
+
+Valid actions for downloads and uploads:
+
+| Value | Description |
+|---|---|
+| `overwrite` | Replace the existing file unconditionally |
+| `resume` | Append to an existing partial file (resume interrupted transfers) |
+| `similar` | Rename the incoming file with a timestamp, keeping the existing file as-is |
+| `rename` | Rename the existing file with a timestamp; the incoming file uses the original name |
+| `skip` | Leave the existing file untouched and skip the transfer |
+| `compare` | Skip files that match by size, modification date, or checksum |
+| `cancel` | Abort the entire transfer when a conflict is encountered |
+
+Valid actions for `--synchronize`:
+
+| Value | Description |
+|---|---|
+| `download` | Download changed and missing files from remote to local |
+| `upload` | Upload changed and missing files from local to remote |
+| `mirror` | Download and upload: make both sides identical |
+| `cancel` | Abort the synchronization when a conflict is encountered |
+
+```bash
+duck --upload s3://mybucket/data/ ./data/ --existing overwrite
+```
+
+```bash
+duck --synchronize s3://mybucket/website/ ./public/ --existing mirror
+```
+
+---
+
+### `--preserve` / `-P`
+
+Preserve permissions, ACLs, metadata, and modification timestamps during transfers.
+
+```bash
+duck --upload sftp://user@example.com/backups/ ./backups/ --preserve
+```
+
+---
+
+### `--retry` / `-r`
+
+Retry failed connection attempts. Optionally specify the number of retries; defaults to 1 if the flag is present without a value.
+
+**Argument:** `[count]` (optional)
+
+```bash
+# Retry once on failure
+duck --download sftp://user@example.com/large-file.iso ./large-file.iso --retry
+
+# Retry up to 5 times
+duck --download sftp://user@example.com/large-file.iso ./large-file.iso --retry 5
+```
+
+---
+
+### `--parallel`
+
+Number of concurrent connections to use for transfers. When specified, `duck` switches to concurrent transfer mode.
+
+**Argument:** `[connections]` (optional, defaults to 2)
+
+```bash
+duck --upload s3://mybucket/media/ ./media/ --parallel 4
+```
+
+---
+
+### `--throttle`
+
+Limit transfer bandwidth to the specified number of bytes per second.
+
+**Argument:** `<bytes per second>`
+
+```bash
+# Limit to ~1 MB/s
+duck --upload sftp://user@example.com/large/ ./large/ --throttle 1048576
+```
+
+---
+
+### `--udt`
+
+Use the UDT (UDP-based Data Transfer) protocol for file transfers when the connected service supports it. UDT can achieve higher throughput than TCP on high-latency or high-bandwidth-delay-product network paths.
+
+```bash
+duck --upload sftp://user@example.com/large-files/ ./files/ --udt
+```
+
+---
+
+### `--nochecksum`
+
+Skip checksum verification after a transfer completes. Useful when the remote server does not support checksum calculation and the verification step produces errors.
+
+```bash
+duck --upload ftp://ftp.example.com/data/ ./data/ --nochecksum
+```
+
+---
+
+### `--chmod`
+
+Set explicit permissions on uploaded files using an octal mode value.
+
+**Argument:** `<mode>`
+
+```bash
+duck --upload sftp://user@example.com/scripts/deploy.sh ./deploy.sh \
+     --chmod 755
+```
+
+---
+
+### `--region`
+
+Location (region) for a newly created bucket or container. Used with `--mkdir` for services such as Amazon S3.
+
+**Argument:** `<location>`
+
+```bash
+duck --mkdir s3://my-new-bucket --region us-west-2
+```
+
+---
+
+## Editor
+
+### `--application`
+
+Path to the external editor application to use with `--edit`. If omitted, `duck` selects the default application registered for the file type.
+
+**Argument:** `<path>`
+
+```bash
+duck --edit sftp://user@example.com/config.yaml --application /usr/bin/vim
+```
+
+---
+
+## Security
+
+### `--vault`
+
+Unlock a Cryptomator vault at the specified remote path before performing the operation. Requires a Cryptomator-encrypted directory at the given path.
+
+**Argument:** `<path>`
+
+```bash
+duck --download sftp://user@example.com/encrypted/file.txt ./file.txt \
+     --vault sftp://user@example.com/encrypted
+```
+
+---
+
+## Output control
+
+### `--verbose` / `-v`
+
+Print the full connection transcript, including all protocol-level messages sent and received.
+
+```bash
+duck --upload sftp://user@example.com/data/ ./data/ --verbose
+```
+
+---
+
+### `--debug`
+
+Print detailed debug output. More verbose than `--verbose`; useful for diagnosing connection issues.
+
+```bash
+duck --list sftp://user@example.com/ --debug
+```
+
+---
+
+### `--quiet` / `-q`
+
+Suppress all progress messages. Only errors are printed. When combined with a transfer command, `duck` also skips file-conflict prompts and falls back to checksum-based comparison.
+
+```bash
+duck --upload s3://mybucket/logs/ ./logs/ --quiet
+```
+
+---
+
+### `--assumeyes` / `-y`
+
+Answer yes to all interactive prompts automatically. Useful for scripting where no user input is available.
+
+```bash
+duck --delete sftp://user@example.com/tmp/ --assumeyes
+```
+
+---
+
+## Quick reference table
+
+| Flag | Short | Argument | Description |
+|---|---|---|---|
+| `--username` | `-u` | `<username or access key>` | Username or access key |
+| `--password` | `-p` | `<password or secret key>` | Password or secret key |
+| `--identity` | `-i` | `<private key file>` | Private key for SFTP public-key auth |
+| `--anonymous` | — | — | Connect without credentials |
+| `--nokeychain` | — | — | Do not save passwords in keychain |
+| `--profile` | — | `<profile>` | Load a connection profile file |
+| `--existing` | `-e` | `<action>` | Action for existing files (overwrite, resume, similar, rename, compare, skip, cancel) |
+| `--preserve` | `-P` | — | Preserve permissions, ACLs, and timestamps |
+| `--retry` | `-r` | `[count]` | Retry failed connections |
+| `--parallel` | — | `[connections]` | Number of concurrent transfer connections |
+| `--throttle` | — | `<bytes per second>` | Limit bandwidth usage |
+| `--udt` | — | — | Use UDT protocol if applicable |
+| `--nochecksum` | — | — | Skip checksum verification |
+| `--chmod` | — | `<mode>` | Set octal permissions on uploaded files |
+| `--region` | — | `<location>` | Region for bucket or container creation |
+| `--application` | — | `<path>` | External editor application for `--edit` |
+| `--vault` | — | `<path>` | Unlock a Cryptomator vault |
+| `--verbose` | `-v` | — | Print connection transcript |
+| `--debug` | — | — | Print debug output |
+| `--quiet` | `-q` | — | Suppress progress messages |
+| `--assumeyes` | `-y` | — | Assume yes for all prompts |

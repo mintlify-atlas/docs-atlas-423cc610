@@ -1,0 +1,237 @@
+---
+title: "duck CLI command reference: all actions and syntax"
+description: "Complete reference for all duck CLI commands: upload, download, copy, move, list, longlist, delete, mkdir, synchronize, edit, purge, version, and help."
+---
+
+Every `duck` invocation requires exactly one action flag. The action determines what operation is performed and what arguments it expects. This page documents all available actions, their syntax, and a working example for each.
+
+<Note>
+  Action flags are mutually exclusive — you can only specify one action per invocation. Combine an action with any number of [option flags](/cli/options) to control authentication, transfer behavior, and output.
+</Note>
+
+## Transfer commands
+
+### `--upload`
+
+Upload a local file or folder to a remote server. Folders are uploaded recursively.
+
+**Syntax:** `duck --upload <url> <local-path>`
+
+```bash
+duck --upload s3://mybucket/data/report.pdf ./report.pdf
+```
+
+To upload an entire folder:
+
+```bash
+duck --upload sftp://user@example.com/var/www/html/ ./dist/
+```
+
+---
+
+### `--download` / `-d`
+
+Download a file or folder from a remote server to a local path. Denote a remote folder with a trailing `/`.
+
+**Syntax:** `duck --download <url> <local-path>`
+
+<CodeGroup>
+
+```bash Download a single file
+duck --download sftp://user@example.com/backups/db.sql.gz ./db.sql.gz
+```
+
+```bash Download a folder recursively
+duck --download s3://mybucket/exports/ ./exports/
+```
+
+</CodeGroup>
+
+---
+
+### `--copy`
+
+Copy a file or folder from one remote server to another. Both arguments are remote URLs, which means you can copy between different protocols or accounts.
+
+**Syntax:** `duck --copy <source-url> <target-url>`
+
+```bash
+duck --copy sftp://user@origin.example.com/data/file.csv \
+            s3://mybucket/archive/file.csv
+```
+
+---
+
+### `--move`
+
+Move or rename a file on the same server.
+
+**Syntax:** `duck --move <source-url> <target-url>`
+
+```bash
+duck --move sftp://user@example.com/uploads/temp.csv \
+            sftp://user@example.com/processed/final.csv
+```
+
+---
+
+### `--synchronize`
+
+Synchronize a remote folder with a local directory. Files are compared and only changed items are transferred.
+
+**Syntax:** `duck --synchronize <url> <local-directory>`
+
+```bash
+duck --synchronize s3://mybucket/website/ ./public/
+```
+
+Use `--existing` to control what happens to files that already exist at the destination. See [options](/cli/options) for valid transfer actions.
+
+---
+
+## File management commands
+
+### `--list` / `-l`
+
+List the files in a remote folder.
+
+**Syntax:** `duck --list <url>`
+
+```bash
+duck --list sftp://user@example.com/uploads/
+```
+
+---
+
+### `--longlist` / `-L`
+
+List the files in a remote folder in long format, including modification date and permission mask.
+
+**Syntax:** `duck --longlist <url>`
+
+```bash
+duck --longlist sftp://user@example.com/uploads/
+```
+
+Example output:
+
+```
+drwxr-xr-x  2024-03-15  reports/
+-rw-r--r--  2024-03-14  report.pdf
+-rw-r--r--  2024-03-13  archive.tar.gz
+```
+
+---
+
+### `--delete` / `-D`
+
+Delete a file or folder on the remote server. Glob patterns (e.g., `*.log`) are supported.
+
+**Syntax:** `duck --delete <url>`
+
+```bash
+duck --delete sftp://user@example.com/tmp/old-file.log
+```
+
+To delete all `.log` files in a directory:
+
+```bash
+duck --delete sftp://user@example.com/tmp/*.log
+```
+
+<Warning>
+  Deletion is permanent and cannot be undone. Double-check the URL before running `--delete`.
+</Warning>
+
+---
+
+### `--mkdir` / `-c`
+
+Create a directory on the remote server. For services that support regions (such as Amazon S3), use `--region` to set the bucket location.
+
+**Syntax:** `duck --mkdir <url>`
+
+```bash
+duck --mkdir sftp://user@example.com/new-folder
+```
+
+Create an S3 bucket in a specific region:
+
+```bash
+duck --mkdir s3://my-new-bucket --region eu-west-1
+```
+
+---
+
+## Editor and CDN commands
+
+### `--edit`
+
+Download a remote file to a temporary local path and open it in an external editor. When you save and close the editor, the file is uploaded back to the server automatically.
+
+**Syntax:** `duck --edit <url>`
+
+```bash
+duck --edit sftp://user@example.com/etc/nginx/nginx.conf
+```
+
+Specify a particular editor application with `--application`:
+
+```bash
+duck --edit sftp://user@example.com/config.yaml \
+     --application /usr/bin/vim
+```
+
+---
+
+### `--purge`
+
+Invalidate a file in a CDN distribution (Download, Website CDN, or Custom origin). This is supported for services that expose CDN invalidation, such as Amazon CloudFront via S3.
+
+**Syntax:** `duck --purge <url>`
+
+```bash
+duck --purge s3://mybucket/assets/logo.png
+```
+
+---
+
+## Utility commands
+
+### `--version` / `-V`
+
+Print the `duck` version number and exit.
+
+```bash
+duck --version
+```
+
+---
+
+### `--help` / `-h`
+
+Print the help text listing all available commands and options, then exit.
+
+```bash
+duck --help
+```
+
+---
+
+## Quick reference table
+
+| Flag | Short | Arguments | Description |
+|---|---|---|---|
+| `--upload` | — | `<url> <file>` | Upload file or folder recursively |
+| `--download` | `-d` | `<url> <file>` | Download file or folder |
+| `--copy` | — | `<url> <url>` | Copy between two remote servers |
+| `--move` | — | `<url> <file>` | Move or rename on the server |
+| `--list` | `-l` | `<url>` | List files in a remote folder |
+| `--longlist` | `-L` | `<url>` | Long list with date and permissions |
+| `--delete` | `-D` | `<url>` | Delete a remote file or folder |
+| `--mkdir` | `-c` | `<url>` | Create a remote directory |
+| `--synchronize` | — | `<url> <directory>` | Synchronize remote and local folders |
+| `--edit` | — | `<url>` | Edit file in an external editor |
+| `--purge` | — | `<url>` | Invalidate file in CDN |
+| `--version` | `-V` | — | Show version number and quit |
+| `--help` | `-h` | — | Print help text |

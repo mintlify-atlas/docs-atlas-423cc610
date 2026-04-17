@@ -1,0 +1,147 @@
+---
+title: "Upload and download files and folders with Cyberduck"
+description: "Transfer files and folders between your machine and a remote server with Cyberduck or the duck CLI, with configurable actions for handling existing files."
+---
+
+Cyberduck supports uploading and downloading individual files as well as entire directory trees. Both the desktop application and the `duck` command-line interface expose the same transfer engine, including configurable actions for handling existing files, bandwidth throttling, and a persistent transfer queue.
+
+<Tabs>
+  <Tab title="GUI">
+
+## Uploading files
+
+<Steps>
+  <Step title="Drag and drop">
+    With a browser window open and connected to a server, drag one or more files or folders from Finder (macOS) or File Explorer (Windows) onto the remote file listing. Cyberduck queues the items and begins uploading immediately.
+  </Step>
+  <Step title="Action menu">
+    Select **File > Upload...** (or press the toolbar **Upload** button) to open a file picker. Select the files or folders you want to upload and click **Choose**. Folders are uploaded recursively—all nested contents are included.
+  </Step>
+</Steps>
+
+## Downloading files
+
+<Steps>
+  <Step title="Drag and drop">
+    Drag one or more items from the remote file listing to a local folder in Finder or File Explorer. The transfer starts immediately and progress is shown in the Transfers window.
+  </Step>
+  <Step title="Right-click menu">
+    Right-click (or Control-click) one or more selected remote files and choose **Download** or **Download To...** to pick a destination folder. When downloading a folder, Cyberduck traverses the entire directory tree and recreates the structure locally.
+  </Step>
+</Steps>
+
+## Transfer queue and progress window
+
+All active and queued transfers appear in the **Transfers** window (**Window > Transfers**). Each entry shows the file name, transfer direction, bytes transferred, current speed, and estimated time remaining. You can pause, resume, or remove individual transfers from the queue at any time.
+
+The queue enforces a configurable limit on the number of concurrent transfers. When the limit is reached, new transfers wait until a slot becomes available.
+
+<Tip>
+  Double-click a completed transfer entry to reveal the file in Finder or File Explorer.
+</Tip>
+
+## Handling existing files
+
+When a transfer encounters a file that already exists at the destination, Cyberduck prompts you to choose a transfer action. You can also set a default action in **Preferences > Transfers** to avoid being prompted every time.
+
+| Action | Behavior |
+|---|---|
+| **Overwrite** | Replace the existing file unconditionally. |
+| **Resume** | Append to the existing file starting from the current byte offset, useful for continuing interrupted downloads. |
+| **Rename** | Transfer the file with a timestamp appended to its filename, leaving the existing destination file untouched. |
+| **Rename existing** | Keep the incoming file at the original name and rename the existing destination file with a timestamp. |
+| **Skip** | Do not transfer files that already exist at the destination. |
+| **Compare** | Skip files that match by size, modification date, or checksum; only transfer files that differ. |
+| **Prompt** | Ask what to do for each file individually during the transfer. |
+
+<Note>
+  The **Compare** action uses size first, then checksum when available, and finally modification date to determine whether files differ. See [Synchronize folders](/transfers/synchronize) for more details on the comparison logic.
+</Note>
+
+## Bandwidth throttling
+
+To limit how much network bandwidth Cyberduck uses during a transfer, open **Preferences > Transfers** and set a maximum upload or download speed in bytes per second. A value of zero means unlimited.
+
+You can also adjust bandwidth for a running transfer by right-clicking it in the Transfers window and choosing **Bandwidth**.
+
+  </Tab>
+  <Tab title="CLI (duck)">
+
+## Uploading with duck
+
+Use `--upload` to transfer a local file or folder to a remote URL. Folders are uploaded recursively.
+
+<CodeGroup>
+
+```bash Upload a single file
+duck --upload ftps://example.com/remote/path/ /local/file.txt
+```
+
+```bash Upload a folder recursively
+duck --upload sftp://user@example.com/backups/ /local/project/
+```
+
+```bash Upload with overwrite action for existing files
+duck --upload s3://mybucket/data/ /local/data/ --existing overwrite
+```
+
+```bash Upload with concurrent connections
+duck --upload sftp://user@example.com/uploads/ /local/files/ --parallel 5
+```
+
+```bash Upload with bandwidth throttle (bytes per second)
+duck --upload sftp://user@example.com/uploads/ /local/files/ --throttle 1048576
+```
+
+</CodeGroup>
+
+## Downloading with duck
+
+Use `--download` (short: `-d`) to fetch a remote file or folder. Append a trailing `/` to the URL to indicate a folder.
+
+<CodeGroup>
+
+```bash Download a single file
+duck --download sftp://user@example.com/data/report.pdf /local/downloads/
+```
+
+```bash Download a folder recursively
+duck --download sftp://user@example.com/project/ /local/project/
+```
+
+```bash Download and skip files that already exist locally
+duck --download s3://mybucket/exports/ /local/exports/ --existing skip
+```
+
+```bash Download with retry on failure
+duck --download ftps://example.com/files/ /local/files/ --retry 3
+```
+
+</CodeGroup>
+
+## Handling existing files via --existing
+
+Pass `--existing` (short: `-e`) with one of the action names to control what happens when a file already exists:
+
+| Value | Behavior |
+|---|---|
+| `overwrite` | Overwrite all existing files. |
+| `resume` | Append to existing files. |
+| `similar` | Rename incoming file with a timestamp. |
+| `rename` | Rename the existing file with a timestamp. |
+| `skip` | Skip files that already exist. |
+| `compare` | Skip files matching size, modification date, or checksum. |
+| `cancel` | Stop the transfer if any existing file is encountered. |
+
+```bash
+duck --download sftp://user@example.com/data/ /local/data/ --existing compare
+```
+
+  </Tab>
+</Tabs>
+
+---
+
+For preserving permissions, ACLs, and metadata during transfers, see [Preserve permissions, ACLs, and metadata](/transfers/permissions-metadata).
+
+For keeping two directories in sync rather than performing a one-time transfer, see [Synchronize folders](/transfers/synchronize).

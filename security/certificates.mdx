@@ -1,0 +1,147 @@
+---
+title: "TLS certificate verification and client cert authentication"
+description: "How Cyberduck validates server TLS certificates, manages trust exceptions, and authenticates with client certificates for mutual TLS over WebDAV and HTTPS."
+---
+
+Every TLS-protected connection Cyberduck makes — including HTTPS, WebDAV over HTTPS, FTPS, and S3 — goes through certificate validation before any data is exchanged. Cyberduck delegates this verification to the platform's native certificate store, so you get the same root-CA coverage as your browser without any additional configuration. When a problem is detected, Cyberduck surfaces a clear error and gives you the opportunity to inspect or accept the certificate before proceeding.
+
+## Server certificate verification
+
+When Cyberduck opens a TLS connection, it validates the server's certificate chain against the trusted root certificates in your operating system's certificate store.
+
+<Tabs>
+  <Tab title="macOS">
+    Cyberduck uses the **macOS Keychain** and the system's trusted root certificate list. Any CA certificate you have marked as trusted in Keychain Access is automatically trusted by Cyberduck.
+  </Tab>
+  <Tab title="Windows">
+    Cyberduck uses the **Windows Certificate Store** (`certmgr`). Certificates in the **Trusted Root Certification Authorities** store are trusted automatically.
+  </Tab>
+</Tabs>
+
+Validation checks include:
+
+- The certificate was signed by a trusted root or intermediate CA.
+- The certificate has not expired.
+- The server's hostname matches the certificate's Common Name or Subject Alternative Names.
+- The certificate has not been revoked (online revocation checking is disabled by default; enable it with the `connection.ssl.x509.revocation.online` preference).
+
+Cyberduck negotiates TLS 1.2 or TLS 1.3 by default and de-prioritizes cipher suites using CBC mode.
+
+## Certificate errors and untrusted certificates
+
+If validation fails, Cyberduck stops the connection and shows a dialog describing the problem.
+
+Common error conditions:
+
+| Error | Cause |
+|-------|-------|
+| Certificate not trusted | Self-signed certificate or private CA not in the system store |
+| Hostname mismatch | Certificate was issued for a different domain |
+| Certificate expired | The certificate's `notAfter` date has passed |
+| Unknown CA | The signing CA is not in the trusted root store |
+
+The dialog shows the full certificate chain and the specific validation failure. You can click **Show Certificate** to inspect the certificate details before deciding.
+
+<Warning>
+Only accept a certificate exception when you have verified the server's identity through a separate, trusted channel (for example, by comparing the fingerprint with the server administrator). Accepting an unexpected certificate exception exposes you to man-in-the-middle attacks.
+</Warning>
+
+## Adding certificate exceptions
+
+If you trust a particular server certificate despite a validation failure — for example, when connecting to a self-signed internal server — you can add a permanent exception.
+
+<Steps>
+  <Step title="Attempt the connection">
+    Open a connection to the server. Cyberduck displays the certificate warning dialog.
+  </Step>
+  <Step title="Review the certificate">
+    Click **Show Certificate** to inspect the certificate details and confirm you are connecting to the expected server.
+  </Step>
+  <Step title="Trust the certificate">
+    Click **Trust** (or **Continue**, depending on your platform). Cyberduck adds the certificate to the list of previously trusted certificates for that hostname.
+  </Step>
+</Steps>
+
+On macOS, accepting an exception adds the certificate to your Keychain with a trust override for the connection's purpose. On Windows, it is added to the user's certificate store.
+
+Once accepted, the certificate is remembered for future connections. If the server renews its certificate and the new one is also self-signed, you will be prompted again.
+
+## Client certificate authentication
+
+Some WebDAV and HTTPS services require you to present a client certificate to authenticate — this is commonly called mutual TLS (mTLS). Cyberduck supports client certificate authentication using certificates stored in the system certificate store.
+
+### How it works
+
+When a server requests a client certificate during the TLS handshake, Cyberduck queries the system certificate store for certificates whose key usage and issuer match what the server requires. If more than one certificate is available, Cyberduck displays a picker so you can choose the right one. Your selection is saved with the bookmark so subsequent connections use the same certificate automatically.
+
+### Installing a client certificate
+
+<Tabs>
+  <Tab title="macOS">
+    Import your client certificate (in `.p12` / PKCS\#12 format or as a separate certificate and key) into the macOS **Keychain Access** application:
+
+    <Steps>
+      <Step title="Open Keychain Access">
+        Launch **Keychain Access** from Applications → Utilities.
+      </Step>
+      <Step title="Import the certificate">
+        Choose **File → Import Items** and select your `.p12` file. Enter the import password when prompted.
+      </Step>
+      <Step title="Verify the entry">
+        Confirm that the imported entry appears under **My Certificates** in the **login** keychain and has a private key associated with it.
+      </Step>
+    </Steps>
+  </Tab>
+  <Tab title="Windows">
+    Import your client certificate into the Windows Certificate Store:
+
+    <Steps>
+      <Step title="Open the certificate manager">
+        Run `certmgr.msc` or search for **Manage user certificates** in the Start menu.
+      </Step>
+      <Step title="Import the certificate">
+        Expand **Personal → Certificates**, right-click, and choose **All Tasks → Import**. Select your `.p12` file and follow the wizard.
+      </Step>
+      <Step title="Verify the entry">
+        Confirm that the certificate appears in **Personal → Certificates** with a key icon indicating the private key is present.
+      </Step>
+    </Steps>
+  </Tab>
+</Tabs>
+
+### Using a client certificate for a connection
+
+<Steps>
+  <Step title="Open the connection or bookmark settings">
+    Open an existing bookmark (**Bookmarks → Edit Bookmark**) or create a new connection with **File → Open Connection**.
+  </Step>
+  <Step title="Select the client certificate">
+    In the connection settings, find the **Client Certificate** field and choose the certificate from the list. The list is populated from the certificates found in the system store that have an associated private key.
+  </Step>
+  <Step title="Connect">
+    Save the bookmark and connect. Cyberduck presents the selected certificate during the TLS handshake automatically.
+  </Step>
+</Steps>
+
+<Tip>
+If the **Client Certificate** field is empty or shows no options, check that the certificate was imported correctly and that the private key is associated with it in the certificate store.
+</Tip>
+
+## Mutual TLS
+
+Mutual TLS extends standard TLS by requiring both the server and the client to present certificates. The server verifies the client certificate against a CA it trusts, and the client verifies the server certificate as usual.
+
+Cyberduck handles both sides of this exchange:
+
+- **Server verification** — performed automatically using the system certificate store (see [Server certificate verification](#server-certificate-verification) above).
+- **Client authentication** — handled through the client certificate selection described in [Client certificate authentication](#client-certificate-authentication) above.
+
+Mutual TLS is most commonly used with WebDAV over HTTPS and with some S3-compatible services that require it for access control. No special configuration is required beyond importing the client certificate and selecting it in the connection settings.
+
+## TLS protocol versions and cipher configuration
+
+Cyberduck negotiates TLS 1.2 and TLS 1.3 by default. Older protocol versions (TLS 1.0 and 1.1) are also listed as fallbacks for compatibility with legacy servers.
+
+Cipher suites using CBC mode are placed at the lowest negotiation priority so that servers supporting AEAD ciphers (such as AES-GCM or ChaCha20-Poly1305) prefer those instead.
+
+See [WebDAV, FTP, and SFTP protocols](/protocols/webdav-ftp-sftp) for protocol-specific notes on FTPS (FTP over TLS) connection modes.

@@ -1,0 +1,103 @@
+---
+title: "Connect Cyberduck to OpenStack Swift object storage"
+description: "Connect Cyberduck to OpenStack Swift using Keystone v2 or v3 authentication, manage containers, and configure Rackspace Cloud Files connections."
+---
+
+OpenStack Swift is an open-source distributed object storage system. Cyberduck implements two connection profiles that correspond to the two Keystone authentication API versions: **OpenStack Swift (Keystone 2.0)** and **OpenStack Swift (Keystone 3)**. Both connect using the `swift` protocol identifier.
+
+## Keystone v2 vs. Keystone v3
+
+| Feature | Keystone 2.0 | Keystone 3 |
+|---|---|---|
+| Authentication endpoint | `/v2.0/tokens` | `/v3/auth/tokens` |
+| Username format | `Tenant ID:Access Key` | `Project:Domain:Username` |
+| Password label | Secret Key | Password |
+| Token format | PKI or UUID | Fernet or UUID |
+
+Most modern OpenStack deployments use Keystone v3. Keystone v2 is deprecated but still used by some legacy deployments and Rackspace Cloud Files.
+
+## Connection setup
+
+<Tabs>
+  <Tab title="Keystone 3">
+    <Steps>
+      <Step title="Open a new connection">
+        Click **Open Connection** or press `⌘O` / `Ctrl+O`.
+      </Step>
+      <Step title="Select the protocol">
+        Choose **OpenStack Swift (Keystone 3)** from the protocol dropdown.
+      </Step>
+      <Step title="Enter connection details">
+        - **Server** — Your Keystone v3 identity endpoint (for example `identity.example.com`).
+        - **Port** — `5000` (default Keystone port) or `443` for HTTPS.
+        - **Username** — Enter in the format `Project:Domain:Username`. For example: `myproject:Default:alice`.
+        - **Password** — Your OpenStack password.
+      </Step>
+      <Step title="Connect">
+        Click **Connect**. Cyberduck authenticates against `/v3/auth/tokens` and lists your Swift containers.
+      </Step>
+    </Steps>
+  </Tab>
+  <Tab title="Keystone 2">
+    <Steps>
+      <Step title="Open a new connection">
+        Click **Open Connection** or press `⌘O` / `Ctrl+O`.
+      </Step>
+      <Step title="Select the protocol">
+        Choose **OpenStack Swift (Keystone 2.0)** from the protocol dropdown.
+      </Step>
+      <Step title="Enter connection details">
+        - **Server** — Your Keystone v2 identity endpoint.
+        - **Port** — `5000` or `35357` (admin port).
+        - **Username** — Enter in the format `Tenant ID:Access Key` (for example `my-tenant:my-access-key`).
+        - **Password** — Your Secret Key.
+      </Step>
+      <Step title="Connect">
+        Click **Connect**. Cyberduck authenticates against `/v2.0/tokens`.
+      </Step>
+    </Steps>
+  </Tab>
+</Tabs>
+
+## Container management
+
+After connecting, the browser lists all Swift containers in the selected account. You can:
+
+- **Create a container** — Click **File → New Folder** at the root level. Containers are created in the region returned by the Keystone catalog.
+- **Set storage policy** — Some deployments expose storage policies (erasure coding, replication factor). Check **File → Info** for container metadata options.
+- **Delete a container** — Select the container and press `Delete`. The container must be empty before deletion.
+- **Browse objects** — Navigate into a container to see the object listing. Large object (SLO/DLO) manifests are handled transparently.
+
+## Rackspace Cloud Files
+
+Rackspace uses Keystone v2 authentication at its own identity endpoint. Cyberduck ships a dedicated **Rackspace US** profile that pre-configures the server:
+
+```
+identity.api.rackspacecloud.com
+```
+
+<Steps>
+  <Step title="Open a new connection">
+    Click **Open Connection** or press `⌘O` / `Ctrl+O`.
+  </Step>
+  <Step title="Select the profile">
+    Select **Rackspace US** (or **Rackspace UK** if you have a UK account) from the protocol dropdown. If the profile is not listed, install it from **Preferences → Profiles**.
+  </Step>
+  <Step title="Enter credentials">
+    - **Username** — Your Rackspace username.
+    - **API Key** — Your Rackspace Cloud API key (found in the Rackspace Control Panel under **Account → User Management → API Key**).
+  </Step>
+  <Step title="Connect">
+    Click **Connect**.
+  </Step>
+</Steps>
+
+## Large object support
+
+Cyberduck automatically handles large object uploads using either **Static Large Objects (SLO)** or **Dynamic Large Objects (DLO)** depending on the cluster configuration. Progress is shown in the Transfers window during the segment upload phase, including an indeterminate progress indicator while the manifest is committed.
+
+## Related
+
+- [Bookmarks](/configuration/bookmarks)
+- [Cryptomator client-side encryption](/security/cryptomator)
+- [File transfers](/transfers/upload-download)

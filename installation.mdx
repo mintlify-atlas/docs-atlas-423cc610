@@ -1,0 +1,83 @@
+---
+title: "Download and install Cyberduck on macOS or Windows"
+description: "Install Cyberduck on macOS via the .zip download or Mac App Store, or on Windows via .exe, .msi, or Chocolatey. Covers beta and snapshot update channels."
+---
+
+Cyberduck is available as a free download for macOS and Windows from [cyberduck.io](https://cyberduck.io). There is no account or license required for the desktop application. The CLI tool (`duck`) is a separate download — see [CLI installation](/cli/installation) for instructions.
+
+## System requirements
+
+| Platform | Minimum version |
+|----------|----------------|
+| macOS    | Refer to the [download page](https://cyberduck.io/download) for the current requirement |
+| Windows  | Refer to the [download page](https://cyberduck.io/download) for the current requirement |
+
+## Installation
+
+<Tabs>
+  <Tab title="macOS">
+    <Steps>
+      <Step title="Download the archive">
+        Go to [cyberduck.io](https://cyberduck.io) and click **Download**. This downloads a `.zip` archive containing `Cyberduck.app`.
+      </Step>
+      <Step title="Move to Applications">
+        Open the downloaded `.zip` to extract `Cyberduck.app`, then drag it to your **Applications** folder.
+      </Step>
+      <Step title="Open Cyberduck">
+        Double-click **Cyberduck** in Applications to launch it. On first launch, macOS may ask you to confirm opening a downloaded application — click **Open**.
+      </Step>
+    </Steps>
+
+    <Tip>
+      Cyberduck is also available on the [Mac App Store](https://apps.apple.com/app/cyberduck/id409222199). The App Store version is identical in features and updates automatically through the store.
+    </Tip>
+  </Tab>
+
+  <Tab title="Windows">
+    <Steps>
+      <Step title="Download the installer">
+        Go to [cyberduck.io](https://cyberduck.io) and click **Download**. You can choose between:
+        - `.exe` — a standard setup wizard installer
+        - `.msi` — a Windows Installer package, suitable for enterprise deployment via Group Policy
+      </Step>
+      <Step title="Run the installer">
+        Double-click the downloaded file and follow the setup wizard. Cyberduck installs to `%ProgramFiles%\Cyberduck` by default.
+      </Step>
+      <Step title="Launch Cyberduck">
+        Open Cyberduck from the Start menu or desktop shortcut.
+      </Step>
+    </Steps>
+
+    **Install via Chocolatey:**
+
+    If you use [Chocolatey](https://chocolatey.org/), you can install Cyberduck from an elevated command prompt:
+
+    ```powershell
+    choco install cyberduck
+    ```
+
+    <Note>
+      The Chocolatey package is maintained by the community, not by the Cyberduck team. For the latest release, download directly from [cyberduck.io](https://cyberduck.io).
+    </Note>
+  </Tab>
+</Tabs>
+
+## Beta and snapshot builds
+
+Cyberduck offers three update channels:
+
+| Channel  | Description |
+|----------|-------------|
+| **Release** | Stable builds. Default channel. |
+| **Beta** | Pre-release builds with upcoming features. Generally stable. |
+| **Snapshot** | Nightly builds from the development branch. May be unstable. |
+
+To switch channels, go to **Preferences → Update** and select the channel from the dropdown.
+
+<Warning>
+  Snapshot builds are built directly from the development branch and may contain bugs or incomplete features. Use them to test fixes or new functionality, not for production workflows.
+</Warning>
+
+## CLI tool
+
+The `duck` command-line interface is a separate download from the desktop application. It is available for Linux, macOS, and Windows. See [CLI installation](/cli/installation) to get started.

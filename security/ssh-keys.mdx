@@ -1,0 +1,160 @@
+---
+title: "Authenticate using SSH public key authentication over SFTP"
+description: "Configure public key authentication for SFTP connections in Cyberduck, including key types, SSH agent support, jump hosts, and the duck CLI identity flag."
+---
+
+SSH public key authentication lets you connect to SFTP servers without entering a password on every session. Instead of transmitting a password, Cyberduck proves your identity by signing a challenge with your private key, which never leaves your device. Cyberduck reads `~/.ssh/config` automatically, so any identity files, jump hosts, or preferred authentication methods you have already configured for OpenSSH work without additional setup.
+
+## Supported key types and formats
+
+Cyberduck can authenticate with the following private key types:
+
+| Key type | Common filenames | Notes |
+|----------|-----------------|-------|
+| RSA | `id_rsa` | Most widely supported |
+| DSA | `id_dsa` | Deprecated by OpenSSH; use only when required by the server |
+| ECDSA | `id_ecdsa` | Supported via PKCS\#8 and OpenSSH formats |
+| Ed25519 | `id_ed25519` | Recommended for new key pairs |
+
+Cyberduck reads the following key file formats:
+
+- **OpenSSH** — the format produced by `ssh-keygen` on modern systems (`OpenSSH` header line)
+- **OpenSSH v1** — the newer `-----BEGIN OPENSSH PRIVATE KEY-----` format (also produced by `ssh-keygen` with Ed25519 or when using `-o`)
+- **PKCS\#8** — standard PKCS\#8 PEM format (`-----BEGIN PRIVATE KEY-----`)
+- **PuTTY PPK** — PuTTY's native format (v2 and v3)
+
+## Where Cyberduck looks for keys automatically
+
+Cyberduck reads `~/.ssh/config` to discover identity files for each host. If `IdentityFile` is set for a host entry, Cyberduck uses that file. If no `IdentityFile` directive is present, Cyberduck falls back to the following default paths (in order):
+
+1. `~/.ssh/id_rsa`
+2. `~/.ssh/id_dsa`
+
+<Note>
+Automatic lookup of `~/.ssh/id_ecdsa` and `~/.ssh/id_ed25519` is not performed by default. Specify those paths explicitly in `~/.ssh/config` or in the connection settings to use them.
+</Note>
+
+## Setting a custom identity file
+
+You can specify the private key to use for a particular connection in two ways.
+
+<Tabs>
+  <Tab title="Connection settings (GUI)">
+    <Steps>
+      <Step title="Open the connection dialog">
+        Choose **File → Open Connection** (or click **+** in the toolbar) and set the protocol to **SFTP**.
+      </Step>
+      <Step title="Expand SSH key settings">
+        In the connection dialog, click **More Options** to reveal the SSH options section.
+      </Step>
+      <Step title="Select the identity file">
+        Click the **SSH Private Key** field and choose your private key file. Cyberduck stores this setting with the bookmark.
+      </Step>
+    </Steps>
+  </Tab>
+  <Tab title="~/.ssh/config">
+    Add a `Host` block to your OpenSSH configuration file. Cyberduck reads this file on every connection attempt.
+
+    ```text
+    Host myserver.example.com
+        IdentityFile ~/.ssh/id_ed25519_myserver
+        User alice
+    ```
+  </Tab>
+</Tabs>
+
+## SSH agent support
+
+Cyberduck integrates with the SSH agent on each platform, so keys loaded into your agent are tried automatically before falling back to key files.
+
+<Tabs>
+  <Tab title="macOS / Linux">
+    Cyberduck reads the socket path from the `SSH_AUTH_SOCK` environment variable. If `IdentityAgent` is set in `~/.ssh/config` for the target host, that socket path takes precedence.
+
+    ```text
+    # ~/.ssh/config — direct the agent for a specific host
+    Host myserver.example.com
+        IdentityAgent /run/user/1000/gnupg/S.gpg-agent.ssh
+    ```
+
+    Any key loaded into `ssh-agent` (via `ssh-add`) is offered to the server automatically.
+  </Tab>
+  <Tab title="Windows">
+    On Windows, Cyberduck tries two agent sources in order:
+
+    1. **Pageant** — PuTTY's key agent. Cyberduck communicates with a running Pageant process.
+    2. **Windows OpenSSH agent** — the built-in `ssh-agent` service (`openssh-ssh-agent` named pipe).
+
+    Enable the Windows OpenSSH Authentication Agent service in **Services** (`services.msc`) and add keys with `ssh-add` from a PowerShell prompt.
+  </Tab>
+</Tabs>
+
+<Tip>
+If you have `IdentitiesOnly yes` set in `~/.ssh/config` for a host, Cyberduck respects this directive and only offers keys that match the configured `IdentityFile`, even when an agent is running.
+</Tip>
+
+## Jump host / ProxyJump
+
+Cyberduck reads the `ProxyJump` directive from `~/.ssh/config` and establishes a forwarded TCP connection through the jump host before authenticating with the target server. No intermediate files are staged on the jump host.
+
+```text
+# ~/.ssh/config
+Host internal.corp.example.com
+    ProxyJump jumphost.example.com
+    User alice
+    IdentityFile ~/.ssh/id_ed25519
+```
+
+With this configuration, connecting to `internal.corp.example.com` in Cyberduck automatically opens an SSH tunnel through `jumphost.example.com`. Credentials for the jump host are resolved using the same `~/.ssh/config` lookup, so the jump host can use a different key or username than the target.
+
+<Warning>
+Chained jump hosts (multiple comma-separated entries in `ProxyJump`) are not supported. Configure a single jump host per `Host` block.
+</Warning>
+
+## CLI: specifying the identity file with duck
+
+Use the `-i` / `--identity` flag to pass a private key file to the `duck` CLI:
+
+```bash
+duck --upload sftp://user@example.com/remote/path localfile.txt \
+     --identity ~/.ssh/id_ed25519
+```
+
+```bash
+duck --list sftp://user@example.com/home/ \
+     --identity ~/.ssh/id_ed25519_server
+```
+
+The flag accepts a path to any supported private key format. If the key is passphrase-protected, `duck` prompts you at the terminal. See [CLI options reference](/cli/options) for all available flags.
+
+## Generating a key pair
+
+If you do not already have an SSH key pair, generate one with `ssh-keygen`:
+
+```bash
+# Ed25519 — recommended
+ssh-keygen -t ed25519 -C "your-comment" -f ~/.ssh/id_ed25519
+
+# RSA with 4096-bit key
+ssh-keygen -t rsa -b 4096 -C "your-comment" -f ~/.ssh/id_rsa
+```
+
+Copy the **public** key (`~/.ssh/id_ed25519.pub`) to the server's `~/.ssh/authorized_keys` file:
+
+```bash
+ssh-copy-id -i ~/.ssh/id_ed25519.pub user@example.com
+```
+
+Keep the private key file (`~/.ssh/id_ed25519`) on your local machine and protect it with a passphrase.
+
+## Known hosts and host key verification
+
+On the first connection to an SFTP server, Cyberduck presents the server's host key fingerprint and asks you to verify it. After you accept the key, Cyberduck writes it to `~/.ssh/known_hosts` (the standard OpenSSH format). On subsequent connections, Cyberduck checks the presented key against the stored fingerprint.
+
+If the server's key has changed since your last connection, Cyberduck displays a warning before allowing you to continue. This protects against man-in-the-middle attacks.
+
+<Warning>
+A changed host key is a serious security event. Verify the new fingerprint out-of-band with the server administrator before accepting it.
+</Warning>
+
+Host key entries are stored in the standard `~/.ssh/known_hosts` format, so they are shared with OpenSSH and any other tools that read that file. If `ssh.knownhosts.hostname.hash` is enabled in Cyberduck's preferences, hostnames are stored in hashed form (matching the `-H` option of `ssh-keygen`).

@@ -1,0 +1,108 @@
+---
+title: "Use .cyberduckprofile files with the duck CLI tool"
+description: "Use --profile with .cyberduckprofile files to connect duck to S3-compatible endpoints, self-hosted services, and cloud storage beyond the built-in URL schemes."
+---
+
+A connection profile (`.cyberduckprofile`) is an XML configuration file that encodes everything `duck` needs to connect to a specific service: the protocol, hostname, port, default path, and any service-specific settings. Instead of encoding all of this in a long URL, you pass the profile file with `--profile` and use a short URL in your command.
+
+Connection profiles are especially useful when connecting to:
+
+- S3-compatible object stores (MinIO, Ceph, Wasabi, DigitalOcean Spaces, etc.)
+- Self-hosted WebDAV or FTP servers with non-standard ports or paths
+- Cloud services that require a protocol variant not covered by the built-in URL schemes
+
+## Using the `--profile` flag
+
+Pass a `.cyberduckprofile` file path to `--profile`. `duck` reads the file, registers the protocol defined inside it, and then uses that protocol when parsing your URL.
+
+**Syntax:** `duck --profile <path-to-profile> <action> <url>`
+
+```bash
+duck --profile ~/Wasabi.cyberduckprofile \
+     --list s3://my-wasabi-bucket/
+```
+
+<Note>
+  When `--profile` is specified, `duck` loads only the protocols defined in that file. Built-in protocols are still available for the current invocation. If `--profile` is not used, `duck` loads all bundled profiles automatically.
+</Note>
+
+## Obtaining profiles
+
+### From the Cyberduck profiles repository
+
+The Cyberduck team maintains a curated collection of profiles for popular services. You can browse and download them from the [profiles repository on GitHub](https://github.com/iterate-ch/profiles).
+
+Each `.cyberduckprofile` file in the repository can be downloaded directly and then referenced with `--profile`.
+
+### From the Cyberduck GUI
+
+If you have the Cyberduck desktop application installed, you can install additional profiles via **Preferences → Profiles**. Installed profiles are stored locally and can also be referenced from the CLI.
+
+## Example: custom S3-compatible endpoint (MinIO)
+
+MinIO uses the S3 protocol but requires a custom hostname and does not use path-style routing the same way AWS does. A dedicated profile encodes these details.
+
+<Steps>
+  <Step title="Download the MinIO profile">
+    Download `Minio.cyberduckprofile` from the [profiles repository](https://github.com/iterate-ch/profiles) and save it locally.
+  </Step>
+  <Step title="Run a command with the profile">
+    ```bash
+    duck --profile ~/Minio.cyberduckprofile \
+         --username minioadmin \
+         --password minioadmin \
+         --list s3://minio.local/my-bucket/
+    ```
+  </Step>
+  <Step title="Upload a file">
+    ```bash
+    duck --profile ~/Minio.cyberduckprofile \
+         --username minioadmin \
+         --password minioadmin \
+         --upload s3://minio.local/my-bucket/report.pdf ./report.pdf
+    ```
+  </Step>
+</Steps>
+
+## URL format when using a profile
+
+When a profile is loaded, the URL scheme used in your command should match the protocol identifier defined inside the profile file. For most S3-compatible profiles the scheme is `s3://`. For WebDAV-based profiles it is typically `dav://` or `davs://`.
+
+Check the `<string>` value of the `Protocol` key inside the `.cyberduckprofile` file if you are unsure which scheme to use:
+
+```xml
+<key>Protocol</key>
+<string>s3</string>
+```
+
+For a WebDAV profile:
+
+```bash
+duck --profile ~/ownCloud.cyberduckprofile \
+     --username alice \
+     --list davs://cloud.example.com/remote.php/dav/files/alice/
+```
+
+## Bundled profiles
+
+`duck` ships with a set of bundled profiles that are loaded automatically when `--profile` is not specified. This means you can use their URL schemes directly without providing a profile file. Common bundled profiles include:
+
+| Service | URL scheme |
+|---|---|
+| Amazon S3 | `s3://` |
+| Backblaze B2 | `b2://` |
+| Google Drive | `googledrive://` |
+| Microsoft OneDrive | `onedrive://` |
+| SFTP | `sftp://` |
+| FTP | `ftp://` |
+| FTP over TLS | `ftps://` |
+| WebDAV (HTTP) | `dav://` |
+| WebDAV (HTTPS) | `davs://` |
+
+For services not covered by a built-in scheme, download the appropriate profile from the [profiles repository](https://github.com/iterate-ch/profiles) and reference it with `--profile`.
+
+## Related options
+
+- Use `--username` / `-u` and `--password` / `-p` to supply credentials for the profile's target service.
+- Use `--identity` / `-i` for SFTP connections that authenticate with a private key.
+- See the full [options reference](/cli/options) for all available flags.

@@ -1,0 +1,89 @@
+---
+title: "Connect Cyberduck to Google Drive and Cloud Storage"
+description: "Authenticate with Google OAuth 2.0 to browse Google Drive folders and shared drives, or manage Google Cloud Storage buckets with HMAC or OAuth credentials."
+---
+
+Cyberduck provides separate protocol implementations for **Google Drive** and **Google Cloud Storage**. Both use OAuth 2.0 for authentication against Google's identity platform; no password is required. Google Cloud Storage additionally supports HMAC keys for interoperability with S3-compatible tooling.
+
+## Google Drive
+
+Google Drive lets you store, organise, and share files through your Google account. Cyberduck exposes your Drive as a browsable file system.
+
+### Connection setup
+
+<Steps>
+  <Step title="Open a new connection">
+    Click **Open Connection** or press `⌘O` / `Ctrl+O`.
+  </Step>
+  <Step title="Select the protocol">
+    Choose **Google Drive** from the protocol dropdown.
+  </Step>
+  <Step title="Authenticate">
+    Leave the username and password fields empty. Click **Connect** — a browser window opens asking you to sign in to your Google account and grant Cyberduck access to the `https://www.googleapis.com/auth/drive` scope. The token is saved to the system keychain.
+  </Step>
+  <Step title="Browse your files">
+    After authentication, Cyberduck opens your Drive at `/My Drive`. All files and folders are listed, including those shared with you.
+  </Step>
+</Steps>
+
+<Note>
+  The OAuth redirect uses the custom URI scheme `io.cyberduck:oauth`. If your browser blocks custom URI schemes, allow it when prompted.
+</Note>
+
+### Default path
+
+The connection opens at `/My Drive` by default. You can change the default path in the bookmark settings (**Bookmarks → Edit Bookmark → Path**).
+
+### Shared drives
+
+Cyberduck lists Shared drives (formerly Team Drives) alongside your personal My Drive. Navigate to a Shared drive entry in the top-level browser to access its contents.
+
+<Tip>
+  Trashed files are excluded from directory listings. If you are missing files, check the Google Drive web interface to see whether they have been moved to the Trash.
+</Tip>
+
+### Folder browsing
+
+Cyberduck represents the Google Drive folder hierarchy as a conventional directory tree. You can create folders, rename files, move items between folders, and upload or download using drag-and-drop or the transfer queue.
+
+---
+
+## Google Cloud Storage
+
+Google Cloud Storage (GCS) is an object storage service aimed at developers and enterprises. Cyberduck connects to the JSON API at `storage.googleapis.com`.
+
+### Connection setup
+
+<Steps>
+  <Step title="Open a new connection">
+    Click **Open Connection** or press `⌘O` / `Ctrl+O`.
+  </Step>
+  <Step title="Select the protocol">
+    Choose **Google Cloud Storage** from the protocol dropdown.
+  </Step>
+  <Step title="Authenticate">
+    Leave the username and password fields empty and click **Connect**. Cyberduck requests the `https://www.googleapis.com/auth/devstorage.full_control` OAuth scope. Approve the consent screen in your browser.
+  </Step>
+</Steps>
+
+### HMAC keys
+
+GCS supports HMAC-compatible signing keys that allow tools built for the S3 API to connect. To use HMAC credentials with Cyberduck:
+
+1. Create an HMAC key in the Google Cloud Console under **Cloud Storage → Settings → Interoperability**.
+2. Copy the **Access Key** (HMAC key ID) and the **Secret**.
+3. In Cyberduck, use the **Amazon S3** protocol with `storage.googleapis.com` as the server, the HMAC Access Key as the username, and the HMAC Secret as the password.
+
+### Regions
+
+GCS buckets can be created in three multi-region locations exposed to Cyberduck: `us`, `eu`, and `asia`. Select the region when creating a new bucket via **File → New Folder**.
+
+### Bucket and object management
+
+After connecting, the browser displays all buckets in your project. To access a specific bucket without listing all buckets (useful when the service account does not have `storage.buckets.list`), enter the bucket name directly as the default path in the bookmark.
+
+## Related
+
+- [Bookmarks](/configuration/bookmarks)
+- [Cryptomator client-side encryption](/security/cryptomator)
+- [File transfers](/transfers/upload-download)

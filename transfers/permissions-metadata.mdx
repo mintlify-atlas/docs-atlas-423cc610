@@ -1,0 +1,131 @@
+---
+title: "Preserve file permissions, ACLs, and metadata in Cyberduck"
+description: "Configure Cyberduck to preserve UNIX permissions, ACLs, custom metadata headers, and modification timestamps during uploads, downloads, and synchronization."
+---
+
+By default, Cyberduck transfers file content only. Enabling preservation causes the transfer engine to read additional attributes from the source and apply them to the destination after each file is written. Which attributes are available depends on both the direction of the transfer (upload vs. download) and the protocol in use.
+
+## The --preserve flag in the CLI
+
+Pass `-P` or `--preserve` to any `duck` transfer command to enable preservation of permissions, ACLs, metadata, and modification timestamps in a single switch:
+
+```bash
+duck --upload sftp://user@example.com/backups/ /local/data/ --preserve
+duck --download s3://mybucket/exports/ /local/exports/ --preserve
+duck --synchronize sftp://user@example.com/project/ /local/project/ --preserve
+```
+
+When `--preserve` is active, the CLI sets the same options that the GUI exposes individually in **Preferences > Transfers**: `permissions`, `acl`, `timestamp`, and `metadata`.
+
+<Note>
+  `--preserve` enables all supported preservation options simultaneously. If the connected protocol does not support a particular attribute (for example, ACLs over plain FTP), that attribute is silently skipped rather than causing an error.
+</Note>
+
+## Setting permissions explicitly in the CLI
+
+Use `--chmod` to set an explicit octal permission mask on uploaded files, overriding whatever the local file has:
+
+```bash
+duck --upload sftp://user@example.com/public/ /local/html/ --chmod 644
+```
+
+This applies to protocols that implement the `UnixPermission` feature, primarily SFTP and FTP servers that support the `SITE CHMOD` command.
+
+## GUI transfer settings
+
+In the Cyberduck desktop application, preservation options are configured per-transfer type under **Preferences > Transfers**.
+
+<Tabs>
+  <Tab title="Uploads">
+
+The following options are available for upload transfers. Each maps to a flag in `UploadFilterOptions`:
+
+| Option | What it preserves |
+|---|---|
+| **Permissions** | Reads the UNIX permission bits from the local file and applies them to the remote file after upload via `UnixPermission`. |
+| **ACL** | Reads the current ACL from the remote file (or applies a default) and writes it back after upload via `AclPermission`. |
+| **Timestamp** | Reads the local modification date and creation date and writes them to the remote file after upload via `Timestamp`. |
+| **Metadata** | Reads existing metadata from the remote file (or the protocol default) and re-applies it after upload via `Headers`/`Metadata`. |
+
+When **Permissions** is enabled and the remote file does not yet exist, Cyberduck reads the local file's permission bits directly and uploads them. When the remote file already exists, it preserves the existing remote permission.
+
+  </Tab>
+  <Tab title="Downloads">
+
+The following options are available for download transfers, mapped to `DownloadFilterOptions`:
+
+| Option | What it preserves |
+|---|---|
+| **Permissions** | Applies the remote file's UNIX permission bits to the downloaded local file. |
+| **Timestamp** | Sets the local file's modification date to match the remote modification date. |
+
+<Note>
+  ACL and metadata preservation are not available for downloads because local filesystems generally do not use the same ACL model as remote protocols (S3 canned ACLs, WebDAV properties, etc.).
+</Note>
+
+  </Tab>
+</Tabs>
+
+## UNIX permissions
+
+The `UnixPermission` feature applies to protocols that expose POSIX-style permission bits, principally **SFTP** and **FTP** (where the server supports `SITE CHMOD`).
+
+- **Owner**, **group**, and **other** read/write/execute bits are read from the local file and written to the remote file after upload.
+- You can override the default with `--chmod <octal>` in the CLI (e.g., `--chmod 755`).
+- If the preference `queue.upload.permissions.default` is enabled, Cyberduck applies a configured default mask instead of reading the local file's bits.
+
+```bash
+# Upload and apply explicit permissions
+duck --upload sftp://user@example.com/scripts/ /local/scripts/ --chmod 755
+```
+
+## ACLs (Access Control Lists)
+
+The `AclPermission` feature applies to object-storage protocols that use role-based access policies rather than POSIX bits, primarily **Amazon S3**, **Azure Blob Storage**, and compatible providers.
+
+- On upload, if the file already exists remotely, Cyberduck reads the current ACL and re-applies it. If the file is new, a default ACL derived from the configured permission preference is applied.
+- The default ACL is derived from the standard octal permission preference: if the "other" group has read permission, a public-read ACL is set; if the "group" has read or write permission, an authenticated-read or write ACL is set accordingly.
+- ACL roles include `READ` and `WRITE`. Recognized user groups include `EVERYONE` (all users) and `AUTHENTICATED` (authenticated users only).
+
+<Info>
+  S3 canned ACLs (`private`, `public-read`, etc.) are managed separately through the bucket or object settings in the Cyberduck browser. The `AclPermission` feature preserves the ACL that was already set on the object.
+</Info>
+
+## Custom metadata and HTTP headers
+
+The `Metadata` feature (and its subtype `Headers`, used specifically during transfers) applies to protocols that support arbitrary key-value attributes attached to objects: **Amazon S3**, **Azure Blob Storage**, **WebDAV**, and **Backblaze B2**.
+
+- On upload, if the remote object already exists, Cyberduck reads its existing metadata and re-applies it after the new content is written.
+- If no existing metadata is found, the protocol's default metadata (configured in **Preferences > Connection**) is applied.
+- Metadata keys and values are plain strings, such as `Content-Type`, `Cache-Control`, or custom `x-amz-meta-*` headers on S3.
+
+```bash
+# Preserve existing S3 object metadata on upload
+duck --upload s3://mybucket/assets/ /local/assets/ --preserve
+```
+
+## Timestamps and modification dates
+
+The `Timestamp` feature writes the file modification date (and creation date where supported) to the destination after the transfer completes. Timestamps are stored and compared at one-second resolution.
+
+- **Uploads**: the local file's modification date (and creation date if available) is read and applied to the remote file.
+- **Downloads**: the remote file's modification date is applied to the downloaded local file.
+- Timestamp preservation is required for the **Compare** transfer action and the synchronize feature to detect which side has changed. See [Synchronize folders](/transfers/synchronize).
+
+## Per-protocol support matrix
+
+| Attribute | SFTP | FTP | S3 | Azure | WebDAV |
+|---|---|---|---|---|---|
+| UNIX permissions | Yes | Partial (SITE CHMOD) | No | No | No |
+| ACL | No | No | Yes | Yes | No |
+| Custom metadata | No | No | Yes | Yes | Yes (properties) |
+| Modification timestamp | Yes | Partial | Yes (Last-Modified) | Yes | Yes |
+
+<Warning>
+  Timestamp support on FTP depends on the server. Many FTP servers do not expose a command to set modification dates, so the timestamp option may have no effect even when enabled.
+</Warning>
+
+## Related pages
+
+- [Upload and download files](/transfers/upload-download) — basic transfers without attribute preservation
+- [Synchronize folders](/transfers/synchronize) — comparison-based sync that relies on timestamps and checksums

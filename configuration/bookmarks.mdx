@@ -1,0 +1,126 @@
+---
+title: "Save and manage server connection bookmarks in Cyberduck"
+description: "Bookmarks let you save server connections with credentials and paths so you can reconnect to any host instantly without re-entering details."
+---
+
+A bookmark is a saved connection record that stores a protocol, hostname, port, username, and optional path. Instead of typing your server address each time, you open a bookmark and Cyberduck reconnects immediately. Bookmarks are stored as individual property list files on disk, which makes them easy to back up, share, or version-control.
+
+## Creating a bookmark
+
+You can create a bookmark from an active connection or by adding one manually.
+
+<Steps>
+  <Step title="Open a connection">
+    Connect to a server using **File → Open Connection** or an existing bookmark.
+  </Step>
+  <Step title="Save as bookmark">
+    While the browser window is open, choose **Bookmark → New Bookmark** (macOS) or right-click the connection tab and select **New Bookmark** (Windows). Cyberduck pre-fills the hostname, port, protocol, and username from the current session.
+  </Step>
+  <Step title="Name the bookmark">
+    Enter a nickname in the **Nickname** field. The nickname is what appears in your bookmark list.
+  </Step>
+  <Step title="Save">
+    Click **OK**. The bookmark appears in the bookmark drawer or sidebar.
+  </Step>
+</Steps>
+
+To create a bookmark without an open connection, choose **Bookmark → New Bookmark** from the menu bar and fill in the fields manually.
+
+## Editing a bookmark
+
+Open the bookmark list with **Bookmark → Show Bookmarks** (or press `⌘B` on macOS). Double-click any bookmark to open its edit sheet.
+
+The edit sheet exposes the following fields:
+
+| Field | Description |
+|---|---|
+| **Nickname** | Display name shown in the bookmark list |
+| **Protocol** | The connection protocol (S3, SFTP, FTP, WebDAV, etc.) |
+| **Server** | Hostname or IP address |
+| **Port** | TCP port (auto-populated when you change the protocol) |
+| **Username** | Login name or access key ID |
+| **Password** | Stored in the system keychain; leave blank to be prompted on connect |
+| **Path** | Default remote directory to open after connecting |
+| **Labels** | Color tags used to group and filter bookmarks |
+
+<Note>
+Changes to a bookmark do not affect any session that is already open. Reconnect after editing to apply the new settings.
+</Note>
+
+## Organizing bookmarks with labels
+
+Cyberduck supports color labels on bookmarks, similar to Finder tags on macOS. Assign a label in the bookmark edit sheet or by right-clicking a bookmark in the list.
+
+Once labeled, you can filter the bookmark list to show only bookmarks with a specific color. This is useful when you manage dozens of servers across different environments (production, staging, personal).
+
+## Connecting from a bookmark
+
+Click any bookmark in the list to open a browser window connected to that host. Cyberduck reads the stored credentials and path, so you land directly in the configured directory.
+
+<Tip>
+Drag a bookmark onto the desktop (macOS) or a folder to create an alias file. Double-clicking the alias launches Cyberduck and opens that connection directly.
+</Tip>
+
+## Importing and exporting bookmarks
+
+<Tabs>
+  <Tab title="Export">
+    Select one or more bookmarks in the list, then choose **File → Export**. Cyberduck writes each bookmark as a `.duck` file (Apple property list format). You can share these files with teammates or store them in a repository.
+  </Tab>
+  <Tab title="Import">
+    Choose **File → Import** and select one or more `.duck` files. Cyberduck adds them to your bookmark list without overwriting existing entries.
+  </Tab>
+</Tabs>
+
+<Warning>
+Exported `.duck` files do not contain passwords. Passwords remain in the system keychain and must be re-entered on the receiving machine.
+</Warning>
+
+## Bookmark file format and location
+
+Each bookmark is stored as a separate `.duck` file (Apple plist XML) in the application support directory:
+
+<Tabs>
+  <Tab title="macOS">
+    ```
+    ~/Library/Application Support/Cyberduck/Bookmarks/
+    ```
+  </Tab>
+  <Tab title="Windows">
+    ```
+    %AppData%\Cyberduck\Bookmarks\
+    ```
+  </Tab>
+</Tabs>
+
+A minimal bookmark file looks like this:
+
+```xml bookmark.duck
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <key>Protocol</key>
+    <string>sftp</string>
+    <key>Hostname</key>
+    <string>example.com</string>
+    <key>Port</key>
+    <string>22</string>
+    <key>Username</key>
+    <string>deploy</string>
+    <key>Nickname</key>
+    <string>Production server</string>
+    <key>Path</key>
+    <string>/var/www</string>
+  </dict>
+</plist>
+```
+
+The filename is a UUID generated at creation time. Do not rename the file manually; Cyberduck tracks bookmarks by UUID, not filename.
+
+## Connection history
+
+Cyberduck maintains a **History** list of recently opened connections. Access it via **Go → History** or the bookmark list dropdown. History entries are not full bookmarks — they record the URL but not credentials. Click a history entry to pre-fill the Open Connection dialog, then authenticate as normal.
+
+To clear history, right-click an entry and choose **Delete** or clear the entire list from the menu.

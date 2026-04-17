@@ -1,0 +1,130 @@
+---
+title: "How to open a connection to servers and cloud storage"
+description: "Open connections in Cyberduck using the dialog, bookmarks, or profiles. Covers password, SSH public key, and OAuth 2.0 authentication for cloud providers."
+---
+
+Cyberduck can connect to any server or cloud storage provider supported by its bundled [connection profiles](/configuration/connection-profiles). You can open a one-time connection using the toolbar button, or save your settings as a [bookmark](/configuration/bookmarks) for quick reconnection later.
+
+## Opening a connection
+
+<Steps>
+  <Step title="Click Open Connection">
+    In the Cyberduck toolbar, click **Open Connection** (or press `⌘O` on macOS / `Ctrl+O` on Windows). The connection dialog opens.
+  </Step>
+  <Step title="Select a protocol">
+    Use the **Protocol** dropdown at the top of the dialog to choose your connection type. The dropdown lists all installed connection profiles, including FTP, SFTP, WebDAV, Amazon S3, Google Drive, and more.
+
+    Selecting a protocol may pre-fill the **Server**, **Port**, and **Username** fields with sensible defaults.
+  </Step>
+  <Step title="Enter connection details">
+    Fill in the required fields:
+
+    | Field      | Description |
+    |------------|-------------|
+    | **Server** | Hostname or IP address of the server (e.g. `ftp.example.com`, `s3.amazonaws.com`). |
+    | **Port**   | Port number. Pre-filled based on the protocol (e.g. 21 for FTP, 22 for SFTP, 443 for HTTPS). |
+    | **Username** | Your account username, access key ID, or email address depending on the protocol. |
+    | **Password** | Your password or secret access key. Stored in the system keychain after first use. |
+  </Step>
+  <Step title="Authenticate and connect">
+    Click **Connect**. Cyberduck opens the connection and displays the remote file listing.
+  </Step>
+</Steps>
+
+<Tip>
+  You can also type a URL directly into the toolbar's quick connect field (e.g. `sftp://user@host.example.com`) and press Enter to open a connection without using the dialog.
+</Tip>
+
+## Authentication methods
+
+Different protocols use different authentication mechanisms. Cyberduck adapts the connection dialog to show only the relevant fields for the selected protocol.
+
+<Tabs>
+  <Tab title="Password">
+    Password authentication is used for FTP, FTPS, SFTP, WebDAV, SMB, and most self-hosted services.
+
+    Enter your **Username** and **Password** in the connection dialog. On a successful connection, Cyberduck stores the password in the system keychain (macOS Keychain or Windows Credential Manager) so you are not prompted again.
+
+    <Note>
+      For SFTP, password authentication must be enabled on the server. Many servers require public key authentication instead.
+    </Note>
+  </Tab>
+
+  <Tab title="SSH key (SFTP)">
+    Public key authentication is the recommended method for SFTP connections.
+
+    <Steps>
+      <Step title="Select SFTP protocol">
+        In the connection dialog, choose **SFTP (SSH File Transfer Protocol)** from the protocol dropdown.
+      </Step>
+      <Step title="Choose SSH key">
+        Click **More Options** to expand the dialog, then use the **SSH Private Key** dropdown to select your private key file. Cyberduck supports:
+        - OpenSSH keys (`~/.ssh/id_rsa`, `~/.ssh/id_ed25519`, etc.)
+        - PEM-encoded keys
+        - PKCS#12 key bundles
+      </Step>
+      <Step title="Connect">
+        Click **Connect**. If your key has a passphrase, you will be prompted to enter it. Cyberduck stores the passphrase in the keychain.
+      </Step>
+    </Steps>
+
+    For more details on key formats and agent support, see [SSH keys](/security/ssh-keys).
+  </Tab>
+
+  <Tab title="OAuth (cloud providers)">
+    Cloud storage providers including Google Drive, Dropbox, Microsoft OneDrive, SharePoint, and others use OAuth 2.0. The username and password fields are hidden for these protocols — authentication happens through a browser redirect.
+
+    <Steps>
+      <Step title="Select a cloud protocol">
+        Choose a cloud provider from the protocol dropdown, such as **Google Drive**, **Dropbox**, or **Microsoft OneDrive**.
+      </Step>
+      <Step title="Click Connect">
+        Click **Connect**. Cyberduck opens a browser window (or in-app web view) where you sign in to the provider and grant access.
+      </Step>
+      <Step title="Authorize access">
+        Complete the sign-in flow in the browser. Once authorized, Cyberduck receives an access token and opens the connection automatically.
+      </Step>
+    </Steps>
+
+    <Note>
+      OAuth tokens are stored securely in the system keychain. You will not be asked to sign in again until the token expires or you explicitly disconnect.
+    </Note>
+  </Tab>
+</Tabs>
+
+## Using bookmarks
+
+A bookmark saves your connection settings so you can reconnect with a single click.
+
+<Steps>
+  <Step title="Open the connection dialog">
+    Configure your connection as described above, but instead of clicking **Connect**, click the **Add Bookmark** button (the bookmark icon in the dialog).
+  </Step>
+  <Step title="Name the bookmark">
+    Give the bookmark a descriptive name. The name appears in the bookmark list and the **Go** menu.
+  </Step>
+  <Step title="Open from bookmarks">
+    In the main window, switch to **Bookmarks** view. Double-click a bookmark to connect.
+  </Step>
+</Steps>
+
+For more on organizing and editing bookmarks, see [Bookmarks](/configuration/bookmarks).
+
+## Using connection profiles
+
+Connection profiles define the server address, port, and authentication settings for a specific service. Bundled profiles cover Amazon S3, Azure, Google Drive, Backblaze B2, Dropbox, OneDrive, SharePoint, Nextcloud, ownCloud, OpenStack Swift, SMB, and others.
+
+You can install additional profiles for S3-compatible providers, iRODS, and other services from **Preferences → Profiles**.
+
+For a full list and instructions, see [Connection profiles](/configuration/connection-profiles).
+
+## Error handling and reconnection
+
+If a connection drops or times out, Cyberduck displays an error in the status bar. You can:
+
+- Click **Reconnect** in the error banner to retry the connection immediately.
+- Double-click a bookmark to open a fresh connection.
+
+<Warning>
+  For cloud providers using OAuth, a connection error may indicate an expired token. Disconnect and reconnect to trigger a new OAuth authorization flow.
+</Warning>

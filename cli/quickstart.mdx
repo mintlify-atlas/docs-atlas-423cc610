@@ -1,0 +1,138 @@
+---
+title: "Upload and download files with the duck CLI quickstart"
+description: "Run your first upload and download with the duck CLI. Learn the URL format, authentication options, and the most common commands to get productive in minutes."
+---
+
+`duck` uses a single, consistent URL format to address any remote resource. You pass the URL as an argument to a command flag such as `--upload` or `--download`, along with a local path. This guide walks you through the first steps: uploading a file, downloading one, and listing a remote directory.
+
+## URL format
+
+Every `duck` command that talks to a remote server requires a URL that identifies the protocol, host, port (optional), and path:
+
+```bash
+protocol://[user@]host[:port]/path
+```
+
+Common protocol schemes:
+
+| Scheme | Service |
+|---|---|
+| `s3://` | Amazon S3 (and S3-compatible services) |
+| `sftp://` | SSH File Transfer Protocol |
+| `ftp://` | FTP |
+| `ftps://` | FTP over TLS |
+| `dav://` | WebDAV over HTTP |
+| `davs://` | WebDAV over HTTPS |
+| `b2://` | Backblaze B2 |
+| `googledrive://` | Google Drive |
+| `onedrive://` | Microsoft OneDrive |
+
+<Note>
+  When the port is omitted, `duck` uses the default port for the selected protocol. For SFTP that is port 22; for FTPS it is 990.
+</Note>
+
+## First upload
+
+<Steps>
+  <Step title="Prepare your credentials">
+    Pass a username and password with `--username` and `--password`. For S3, these are your access key ID and secret access key.
+
+    ```bash
+    duck --upload s3://mybucket/backups/report.pdf ./report.pdf \
+         --username AKIAIOSFODNN7EXAMPLE \
+         --password wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+    ```
+
+    <Tip>
+      Avoid embedding credentials directly in shell commands. Store them in environment variables or let `duck` prompt you interactively by omitting the flags.
+    </Tip>
+  </Step>
+  <Step title="Upload a file">
+    The `--upload` flag takes two arguments: the remote URL and the local file or folder path. Folders are uploaded recursively.
+
+    ```bash
+    duck --upload sftp://user@example.com/uploads/report.pdf ./report.pdf
+    ```
+  </Step>
+  <Step title="Confirm the upload">
+    List the remote directory to verify the file arrived:
+
+    ```bash
+    duck --list sftp://user@example.com/uploads/
+    ```
+  </Step>
+</Steps>
+
+## First download
+
+Use `--download` (short: `-d`) to copy a file from a remote server to a local path. Append a trailing `/` to the local path to download into a directory.
+
+```bash
+duck --download sftp://user@example.com/uploads/report.pdf ./downloads/
+```
+
+To download an entire remote folder recursively, append a trailing `/` to the remote URL as well:
+
+```bash
+duck --download sftp://user@example.com/uploads/ ./downloads/
+```
+
+## Listing remote files
+
+`--list` (short: `-l`) prints the file names in a remote directory. Use `--longlist` (short: `-L`) to include modification dates and permission masks.
+
+<CodeGroup>
+
+```bash Short listing
+duck --list sftp://user@example.com/uploads/
+```
+
+```bash Long listing with dates and permissions
+duck --longlist sftp://user@example.com/uploads/
+```
+
+</CodeGroup>
+
+## Authentication
+
+`duck` supports several authentication methods depending on the protocol.
+
+### Username and password
+
+```bash
+duck --list ftp://files.example.com/pub/ \
+     --username alice \
+     --password secret
+```
+
+### SSH identity file
+
+For SFTP connections, use `--identity` (short: `-i`) to specify a private key file:
+
+```bash
+duck --download sftp://user@example.com/data/file.csv ./file.csv \
+     --identity ~/.ssh/id_ed25519
+```
+
+### Anonymous access
+
+For public FTP or HTTP servers that allow anonymous login, use `--anonymous`:
+
+```bash
+duck --list ftp://ftp.example.com/pub/ --anonymous
+```
+
+### Connection profiles
+
+Use `--profile` to load a `.cyberduckprofile` file, which encodes the server settings for a specific service or S3-compatible endpoint. See [connection profiles](/cli/connection-profiles) for details.
+
+```bash
+duck --profile ~/minio.cyberduckprofile \
+     --list dav://minio.local/mybucket/
+```
+
+## Next steps
+
+- See all available commands in the [command reference](/cli/commands).
+- Explore every flag in the [options reference](/cli/options).
+- Learn how to use connection profiles with the [connection profiles guide](/cli/connection-profiles).

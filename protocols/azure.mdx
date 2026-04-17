@@ -1,0 +1,69 @@
+---
+title: "Connect Cyberduck to Microsoft Azure Blob Storage now"
+description: "Set up Cyberduck to browse and transfer files with Azure Blob Storage using OAuth 2.0 authentication and manage containers and storage tiers."
+---
+
+Cyberduck connects to Microsoft Azure Blob Storage using the protocol identifier `azure`. Authentication is handled via OAuth 2.0 against the Microsoft identity platform; no storage account key is required. The implementation was rewritten in Cyberduck 9.3.
+
+## Prerequisites
+
+- A Microsoft Azure account with at least one storage account.
+- The Azure Blob Storage container(s) you want to access.
+- Appropriate role assignments on the storage account (for example, **Storage Blob Data Contributor**).
+
+## Connection setup
+
+<Steps>
+  <Step title="Open a new connection">
+    In the browser toolbar, click **Open Connection** or press `⌘O` / `Ctrl+O`.
+  </Step>
+  <Step title="Select the protocol">
+    Choose **Windows Azure Blob Storage** from the protocol dropdown.
+  </Step>
+  <Step title="Enter the server hostname">
+    The default hostname template is `storageaccount.blob.core.windows.net`. Replace `storageaccount` with the name of your Azure storage account.
+
+    ```
+    myaccount.blob.core.windows.net
+    ```
+  </Step>
+  <Step title="Authenticate with OAuth 2.0">
+    Leave the username and password fields empty. When you click **Connect**, Cyberduck opens a browser window for you to sign in to your Microsoft account and grant access. The OAuth token is saved in the system keychain and reused for subsequent connections.
+  </Step>
+</Steps>
+
+<Note>
+  Cyberduck connects to `graph.microsoft.com` under the hood and requires access to your Azure Blob Storage endpoints. If your organisation enforces conditional access policies, ensure that the Cyberduck application is permitted.
+</Note>
+
+## Storage account and container management
+
+After connecting, the browser shows all containers within the storage account as top-level folders. You can:
+
+- **Create a container** by clicking **File → New Folder** at the root level.
+- **Delete a container** by selecting it and pressing `Delete`.
+- **Browse blobs** by entering a container and navigating the virtual folder hierarchy.
+
+<Warning>
+  Deleting a container removes all blobs it contains. This operation cannot be undone.
+</Warning>
+
+## Blob storage tiers
+
+Azure Blob Storage supports three access tiers. You can view and change the tier of an individual blob in **File → Info → Azure**:
+
+| Tier | Intended use |
+|---|---|
+| **Hot** | Frequently accessed data; lowest access cost, highest storage cost. |
+| **Cool** | Infrequently accessed data stored for at least 30 days. |
+| **Archive** | Rarely accessed data stored for at least 180 days; objects must be rehydrated before download. |
+
+<Warning>
+  Accessing or downloading an **Archive**-tier blob requires rehydration to Hot or Cool first, which can take hours. Cyberduck will return an error if you attempt to download an Archive-tier blob that has not been rehydrated.
+</Warning>
+
+## Related
+
+- [Bookmarks](/configuration/bookmarks)
+- [Cryptomator client-side encryption](/security/cryptomator)
+- [File transfers](/transfers/upload-download)

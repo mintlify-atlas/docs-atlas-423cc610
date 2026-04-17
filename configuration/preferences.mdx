@@ -1,0 +1,178 @@
+---
+title: "Cyberduck preferences, update channels, and hidden settings"
+description: "Reference for Cyberduck preferences covering transfers, connection profiles, update channels, privacy, keychain storage, and hidden power-user settings."
+---
+
+Cyberduck exposes most of its user-facing settings through a tabbed **Preferences** (macOS) or **Settings** (Windows) window. Open it from the application menu:
+
+- **macOS**: **Cyberduck → Settings** (`⌘,`)
+- **Windows**: **Edit → Preferences**
+
+Each tab controls a distinct area of behaviour. The sections below describe the most important options in each tab.
+
+## General
+
+The **General** tab controls defaults that apply globally across all connections and sessions.
+
+<AccordionGroup>
+  <Accordion title="Download folder">
+    **Save downloaded files to** sets the default destination for files downloaded via the browser window. This path is used when you drag files from Cyberduck to the desktop or choose **File → Download**.
+
+    The default is your home directory's current working directory (resolved from `user.dir` at launch). Change it to a fixed folder such as `~/Downloads` to keep downloads predictable.
+  </Accordion>
+  <Accordion title="Open after download">
+    When enabled, Cyberduck passes each downloaded file to the default system application immediately after the transfer completes. Disable this if you are downloading files in bulk and do not want applications to open repeatedly.
+  </Accordion>
+  <Accordion title="Save workspace">
+    When enabled, Cyberduck reopens all browser windows that were open when the application was last quit. Each window restores its connection automatically on the next launch.
+  </Accordion>
+</AccordionGroup>
+
+## Transfers
+
+The **Transfers** tab controls how file transfer queues behave.
+
+<AccordionGroup>
+  <Accordion title="Existing files">
+    Controls what Cyberduck does when a file at the destination already exists. Options include:
+
+    | Option | Behaviour |
+    |---|---|
+    | **Ask** | Prompt each time a conflict is detected |
+    | **Overwrite** | Replace the existing file without prompting |
+    | **Skip** | Leave the existing file untouched and move on |
+    | **Rename** | Append a suffix to the incoming filename |
+    | **Resume** | Append data to an existing partial file (upload only) |
+    | **Compare** | Skip if checksums match; overwrite if they differ |
+  </Accordion>
+  <Accordion title="Bandwidth throttle">
+    Set a maximum upload and download speed in kilobytes per second. Setting a limit prevents Cyberduck from saturating your connection while other applications are in use. Setting the value to **Unlimited** removes any throttling.
+  </Accordion>
+  <Accordion title="Parallel transfers">
+    Controls how many files are transferred concurrently within a single queue. The default is 5 simultaneous connections. Increasing this can improve throughput on high-latency links; decreasing it reduces load on the remote server.
+  </Accordion>
+  <Accordion title="Remove from queue on completion">
+    When enabled, finished transfer entries are removed from the **Transfers** window automatically. Disable this to keep a persistent history of completed transfers.
+  </Accordion>
+</AccordionGroup>
+
+<Note>
+Per-connection bandwidth settings (set in a bookmark's edit sheet) override the global throttle set here.
+</Note>
+
+## Profiles
+
+The **Profiles** tab lists all available connection profiles from the [iterate-ch/profiles](https://github.com/iterate-ch/profiles) repository. This tab is the primary place to install protocols for S3-compatible clouds, specialized storage providers, and services not covered by the bundled profiles.
+
+- **Search**: Filter the list by provider name or protocol.
+- **Checkbox**: Check a profile to install it; uncheck to remove it. Changes take effect immediately without a restart.
+- **Bundled profiles**: Profiles that ship with Cyberduck are marked as bundled and cannot be uninstalled from this tab.
+
+For full details on the profile format and creating custom profiles, see [Connection profiles](/configuration/connection-profiles).
+
+## Updates
+
+<Tabs>
+  <Tab title="macOS (Sparkle updater)">
+    Cyberduck for macOS uses Sparkle to deliver updates. The **Update** tab offers three release channels:
+
+    | Channel | Description |
+    |---|---|
+    | **Release** | Stable builds recommended for production use |
+    | **Beta** | Pre-release builds with new features; may contain bugs |
+    | **Snapshot** | Nightly builds from the main development branch; use for testing only |
+
+    Enable **Automatically check for updates** to have Sparkle check on launch. You can also trigger a manual check with **Cyberduck → Check for Updates**.
+  </Tab>
+  <Tab title="Windows (Microsoft Store)">
+    The Microsoft Store edition of Cyberduck receives updates through the Store's automatic update mechanism. The **Update** tab is not present; manage update frequency in the Microsoft Store settings.
+  </Tab>
+</Tabs>
+
+## Privacy
+
+<AccordionGroup>
+  <Accordion title="Keychain and credential storage">
+    By default, Cyberduck stores passwords in the system keychain:
+
+    - **macOS**: macOS Keychain via the Security framework
+    - **Windows**: Windows Credential Manager
+
+    You can choose **Not saved** in the bookmark's password field to force Cyberduck to prompt for a password every time it connects. This prevents credentials from being written to the keychain at all.
+  </Accordion>
+  <Accordion title="Anonymous connections">
+    Some protocols (FTP, S3) support anonymous access. When you leave the username blank and the profile permits it, Cyberduck connects without storing any credential.
+  </Accordion>
+</AccordionGroup>
+
+<Warning>
+Cyberduck does not send passwords to any Cyberduck server. All credentials remain on your machine in the system keychain.
+</Warning>
+
+## Logging and transcript
+
+Cyberduck writes a rolling log file for each session. The log captures connection events, protocol commands and responses, and transfer statistics.
+
+**Log file location:**
+
+<Tabs>
+  <Tab title="macOS">
+    ```
+    ~/Library/Logs/Cyberduck/cyberduck.log
+    ```
+  </Tab>
+  <Tab title="Windows">
+    ```
+    %AppData%\Cyberduck\Logs\cyberduck.log
+    ```
+  </Tab>
+</Tabs>
+
+The active log rotates when it reaches 10 MB (100 MB in debug mode). Older archives are compressed as `.log.zip` files. Cyberduck keeps one archive per session; older archives are deleted automatically.
+
+To see protocol-level commands in real time, open **View → Transcript** while a browser window is active. The transcript panel shows each request and response for the current session.
+
+## Hidden preferences
+
+Cyberduck exposes a large set of internal settings that do not appear in the Preferences window. These are documented in the open-source codebase and can be overridden at the operating-system level for power users or automated deployments.
+
+<Tabs>
+  <Tab title="macOS (defaults write)">
+    ```bash
+    # Example: increase the number of transfer queue connections
+    defaults write io.cyberduck.app queue.connections.limit 10
+    ```
+
+    Read the current value:
+
+    ```bash
+    defaults read io.cyberduck.app queue.connections.limit
+    ```
+
+    Delete a custom value to restore the built-in default:
+
+    ```bash
+    defaults delete io.cyberduck.app queue.connections.limit
+    ```
+  </Tab>
+  <Tab title="Windows (registry)">
+    Hidden preferences on Windows are stored under:
+
+    ```
+    HKEY_CURRENT_USER\Software\iterate GmbH\Cyberduck
+    ```
+
+    Set a value using PowerShell:
+
+    ```powershell
+    Set-ItemProperty -Path "HKCU:\Software\iterate GmbH\Cyberduck" `
+      -Name "queue.connections.limit" -Value "10"
+    ```
+  </Tab>
+</Tabs>
+
+<Warning>
+Hidden preferences use internal key names that may change between releases. Only set keys that are documented in the Cyberduck source code or the official wiki. Incorrect values can destabilise connections.
+</Warning>
+
+Preference key names follow dot-notation (for example, `queue.download.folder`, `logging`, `connection.ssl.provider.bouncycastle.position`). The full list of defaults is set in `Preferences.java` in the Cyberduck source repository.

@@ -1,0 +1,185 @@
+---
+title: "Cyberduck connection profiles for cloud and custom services"
+description: "Connection profiles are pre-configured .cyberduckprofile files that define protocol settings, endpoints, and authentication for specific cloud services."
+---
+
+A connection profile (`.cyberduckprofile`) is an Apple property list XML file that bundles protocol settings for a specific service or hosting provider. When you open or install a profile, Cyberduck adds its service to the protocol selector in the Open Connection dialog without requiring you to remember hostnames, ports, or endpoint URLs. Profiles ship with sensible defaults and can make fields like hostname and port non-configurable when the service only supports a single endpoint.
+
+## Bundled profiles
+
+Cyberduck ships with profiles for the most common services. These are embedded in the application and available immediately without any download.
+
+<AccordionGroup>
+  <Accordion title="Object storage">
+    | Profile | Protocol identifier | Default hostname |
+    |---|---|---|
+    | Amazon S3 | `s3` | `s3.amazonaws.com` |
+    | Amazon S3 (IAM Identity Center) | `s3` | `s3.amazonaws.com` |
+    | Google Cloud Storage | `gs` | `storage.googleapis.com` |
+    | Backblaze B2 | `b2` | `api.backblazeb2.com` |
+    | Microsoft Azure Blob Storage | `azure` | `blob.core.windows.net` |
+    | Openstack Swift (Keystone 2) | `swift` | Configurable |
+    | Openstack Swift (Keystone 3) | `swift` | Configurable |
+    | Rackspace US | `swift` | `identity.api.rackspacecloud.com` |
+  </Accordion>
+  <Accordion title="File sync and collaboration">
+    | Profile | Protocol identifier |
+    |---|---|
+    | Dropbox | `dropbox` |
+    | Google Drive | `googledrive` |
+    | Microsoft OneDrive | `onedrive` |
+    | Microsoft SharePoint | `sharepoint` |
+    | Box | `box` |
+    | Files.com | `files.com` |
+    | DRACOON (OAuth) | `dracoon` |
+  </Accordion>
+  <Accordion title="Self-hosted and open source">
+    | Profile | Protocol identifier |
+    |---|---|
+    | Nextcloud | `nextcloud` |
+    | ownCloud | `owncloud` |
+  </Accordion>
+  <Accordion title="Standard protocols">
+    | Profile | Protocol identifier |
+    |---|---|
+    | SFTP | `sftp` |
+    | FTP | `ftp` |
+    | FTPS | `ftps` |
+    | WebDAV (HTTP) | `dav` |
+    | WebDAV (HTTPS) | `davs` |
+    | SMB | `smb` |
+    | Local Disk | `file` |
+  </Accordion>
+</AccordionGroup>
+
+## Installing additional profiles
+
+The [iterate-ch/profiles](https://github.com/iterate-ch/profiles) repository on GitHub hosts hundreds of community-maintained profiles for S3-compatible providers, regional clouds, and specialized services.
+
+<Steps>
+  <Step title="Open Preferences">
+    On macOS choose **Cyberduck → Settings**. On Windows choose **Edit → Preferences**.
+  </Step>
+  <Step title="Go to the Profiles tab">
+    Click the **Profiles** tab. Cyberduck fetches the list of available profiles from the repository.
+  </Step>
+  <Step title="Search and enable">
+    Use the search field to filter by provider name. Click the checkbox next to any profile to install it. Installed profiles appear immediately in the protocol selector.
+  </Step>
+</Steps>
+
+<Note>
+Cyberduck checks for profile updates in the background. If a profile is updated in the repository, the local copy is refreshed automatically on the next launch.
+</Note>
+
+## Creating a custom connection profile
+
+A `.cyberduckprofile` file is a standard Apple plist. You can author one in any text editor and double-click it to install it into Cyberduck.
+
+The following example is based on the actual Backblaze B2 bundled profile:
+
+```xml custom-service.cyberduckprofile
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <!-- Required: maps to a built-in Cyberduck protocol -->
+    <key>Protocol</key>
+    <string>b2</string>
+
+    <!-- Display name shown in the protocol selector -->
+    <key>Description</key>
+    <string>Backblaze B2 Cloud Storage</string>
+
+    <!-- Short label used for bookmarks created with this profile -->
+    <key>Default Nickname</key>
+    <string>Backblaze B2</string>
+
+    <!-- Lock hostname so users cannot change it -->
+    <key>Default Hostname</key>
+    <string>api.backblazeb2.com</string>
+    <key>Hostname Configurable</key>
+    <false/>
+
+    <!-- Lock port -->
+    <key>Default Port</key>
+    <string>443</string>
+    <key>Port Configurable</key>
+    <false/>
+
+    <!-- Placeholder text shown in credential fields -->
+    <key>Username Placeholder</key>
+    <string>Account ID or Key ID</string>
+    <key>Password Placeholder</key>
+    <string>Application Key</string>
+
+    <!-- Mark this as not a bundled profile (omit for third-party profiles) -->
+    <key>Bundled</key>
+    <false/>
+
+    <!-- Optional vendor attribution -->
+    <key>Vendor</key>
+    <string>My Company</string>
+  </dict>
+</plist>
+```
+
+### Supported profile keys
+
+| Key | Type | Description |
+|---|---|---|
+| `Protocol` | string | Required. Built-in protocol identifier (`s3`, `sftp`, `ftp`, `dav`, `davs`, `smb`, `b2`, `googledrive`, `onedrive`, `nextcloud`, `owncloud`, etc.) |
+| `Description` | string | Human-readable service name shown in the UI |
+| `Default Nickname` | string | Pre-filled nickname for new bookmarks |
+| `Default Hostname` | string | Pre-filled or locked hostname |
+| `Hostname Configurable` | boolean | Whether the user can change the hostname |
+| `Default Port` | string | Pre-filled port number |
+| `Port Configurable` | boolean | Whether the user can change the port |
+| `Username Placeholder` | string | Hint text for the username field |
+| `Password Placeholder` | string | Hint text for the password field |
+| `Default Path` | string | Remote path opened by default |
+| `Path Configurable` | boolean | Whether the user can set a default path |
+| `OAuth Authorization Url` | string | OAuth 2.0 authorization endpoint |
+| `OAuth Token Url` | string | OAuth 2.0 token endpoint |
+| `Scopes` | array of strings | OAuth scopes to request |
+| `Properties` | array of strings | Protocol-specific key=value settings |
+| `Bundled` | boolean | Set `false` for third-party profiles |
+| `Vendor` | string | Attribution text |
+
+### Installing a custom profile
+
+Double-click a `.cyberduckprofile` file to install it. Cyberduck copies it to the application support directory and registers the protocol immediately. Alternatively, drag the file into the Cyberduck bookmark window.
+
+## Profile file location on disk
+
+Installed profiles (not bundled ones) are stored here:
+
+<Tabs>
+  <Tab title="macOS">
+    ```
+    ~/Library/Application Support/Cyberduck/Profiles/
+    ```
+  </Tab>
+  <Tab title="Windows">
+    ```
+    %AppData%\Cyberduck\Profiles\
+    ```
+  </Tab>
+</Tabs>
+
+Bundled profiles are embedded inside the application bundle and are not visible on disk.
+
+## Using a profile with the CLI
+
+The `duck` command-line tool accepts a `--profile` flag to use a specific `.cyberduckprofile` file:
+
+```bash
+duck --profile /path/to/custom-service.cyberduckprofile \
+     --username myuser \
+     --list custom://mybucket/
+```
+
+This is useful for automating connections to S3-compatible services or private clouds where no built-in protocol matches the endpoint exactly.
+
+For more CLI options, see [CLI connection profiles](/cli/connection-profiles).

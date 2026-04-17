@@ -1,0 +1,199 @@
+---
+title: "Connect Cyberduck via WebDAV, FTP, and SFTP protocols"
+description: "Configure Cyberduck connections for FTP with explicit or implicit TLS, SFTP with key-based or agent auth, WebDAV/WebDAVS, Nextcloud, ownCloud, and SMB."
+---
+
+Cyberduck supports several standard file transfer protocols alongside its cloud-storage integrations. This page covers FTP, FTPS, SFTP, WebDAV, Nextcloud, ownCloud, and SMB connections.
+
+---
+
+## FTP and FTPS
+
+FTP (File Transfer Protocol) is a legacy but widely deployed protocol for transferring files to web hosts and network-attached storage devices. Cyberduck supports both plain FTP and FTP with TLS (FTPS).
+
+### Connection setup
+
+<Steps>
+  <Step title="Open a new connection">
+    Click **Open Connection** or press `⌘O` / `Ctrl+O`.
+  </Step>
+  <Step title="Select the protocol">
+    - Choose **FTP (File Transfer Protocol)** for unencrypted connections.
+    - Choose **FTP-TLS (Explicit AUTH TLS)** (`ftps`) for TLS-encrypted connections using explicit negotiation (STARTTLS on port 21).
+  </Step>
+  <Step title="Enter connection details">
+    - **Server** — Hostname or IP address of the FTP server.
+    - **Port** — `21` for FTP and explicit FTPS; `990` is conventional for implicit FTPS.
+    - **Username** and **Password**.
+  </Step>
+  <Step title="Connect">
+    Click **Connect**.
+  </Step>
+</Steps>
+
+<Tabs>
+  <Tab title="Explicit TLS (FTPS)">
+    Explicit TLS (also called AUTH TLS or FTPES) starts the connection on port 21 as plain FTP, then upgrades to TLS using the `AUTH TLS` command. This is the most common secure FTP mode and is what Cyberduck's **FTP-TLS** profile uses.
+  </Tab>
+  <Tab title="Implicit TLS">
+    Implicit TLS wraps the entire connection in TLS from the start, typically on port 990. To use implicit TLS, select the **FTP-TLS** protocol, change the port to 990, and configure your server to accept implicit TLS connections.
+  </Tab>
+</Tabs>
+
+### Passive and active mode
+
+Cyberduck defaults to **passive mode** (PASV), where the server opens data ports and the client connects to them. This is the correct mode for most NAT/firewall configurations. Active mode (PORT) can be enabled in **Preferences → FTP** if your server requires it.
+
+<Warning>
+  Passive mode is required when connecting through a NAT router or firewall. Active mode may cause connection failures in such environments.
+</Warning>
+
+---
+
+## SFTP
+
+SFTP (SSH File Transfer Protocol) runs over SSH and is the recommended protocol for secure remote file access. Cyberduck supports password, public key, SSH agent, SSH certificate, and jump-host authentication.
+
+### Connection setup
+
+<Steps>
+  <Step title="Open a new connection">
+    Click **Open Connection** or press `⌘O` / `Ctrl+O`.
+  </Step>
+  <Step title="Select the protocol">
+    Choose **SFTP (SSH File Transfer Protocol)**.
+  </Step>
+  <Step title="Enter connection details">
+    - **Server** — Hostname or IP address.
+    - **Port** — `22` (default).
+    - **Username** — Your SSH login name.
+  </Step>
+</Steps>
+
+### Authentication methods
+
+<Tabs>
+  <Tab title="Password">
+    Enter your password in the **Password** field of the connection dialog. Cyberduck can optionally save it in the system keychain.
+  </Tab>
+  <Tab title="Public key">
+    Leave the password field empty. In **More Options**, click **Use Public Key Authentication** and select your private key file (typically `~/.ssh/id_rsa`, `~/.ssh/id_ed25519`, etc.). Cyberduck will prompt for the key passphrase if the key is encrypted.
+
+    Keys outside the sandbox (macOS App Store build) require an explicit bookmark to the file so the application-scoped sandbox is preserved across sessions.
+  </Tab>
+  <Tab title="SSH agent">
+    If an SSH agent (ssh-agent, gpg-agent, 1Password, Bitwarden SSH Agent, etc.) is running, Cyberduck uses it automatically. The agent socket is read from `SSH_AUTH_SOCK`. No additional configuration is needed in the connection dialog.
+  </Tab>
+  <Tab title="SSH certificate">
+    SSH certificates signed by a certificate authority are supported. Select the signed certificate file using **Use Public Key Authentication** in the connection options.
+  </Tab>
+</Tabs>
+
+### Jump host (ProxyJump)
+
+If the target server is only reachable through a bastion host, Cyberduck reads the `ProxyJump` directive from `~/.ssh/config`:
+
+```ssh-config
+Host production-server
+  HostName 10.0.0.50
+  ProxyJump bastion.example.com
+  User deploy
+```
+
+Cyberduck authenticates with the jump host first and then tunnels through to the destination automatically.
+
+### Host key verification
+
+On first connection, Cyberduck presents the server's host key fingerprint and asks you to confirm it. Accepted fingerprints are stored in preferences. If the key changes on a subsequent connection, Cyberduck warns you before proceeding.
+
+---
+
+## WebDAV and WebDAVS
+
+WebDAV (Web Distributed Authoring and Versioning) extends HTTP with file management operations. Cyberduck supports both plain HTTP (DAV) and HTTPS (DAVS) WebDAV servers.
+
+### Connection setup
+
+<Steps>
+  <Step title="Open a new connection">
+    Click **Open Connection** or press `⌘O` / `Ctrl+O`.
+  </Step>
+  <Step title="Select the protocol">
+    - Choose **WebDAV (HTTP)** (`dav`) for unencrypted HTTP.
+    - Choose **WebDAV (HTTPS)** (`davs`) for TLS-encrypted HTTPS.
+  </Step>
+  <Step title="Enter connection details">
+    - **Server** — Hostname.
+    - **Port** — `80` for HTTP, `443` for HTTPS.
+    - **Path** — The WebDAV root path on the server (for example `/remote.php/dav/files/username/` on Nextcloud).
+    - **Username** and **Password**.
+  </Step>
+</Steps>
+
+### Client certificates
+
+WebDAV connections support mutual TLS (client certificate authentication). Enable **Certificate Configurable** and select your client certificate in the connection options.
+
+---
+
+## Nextcloud and ownCloud
+
+Cyberduck ships dedicated connection profiles for Nextcloud and ownCloud. Both are WebDAV-based and use the same underlying protocol, but the profiles pre-configure locking behaviour:
+
+```
+webdav.lock.enable=false
+```
+
+This disables WebDAV locking, which improves compatibility with these platforms.
+
+### Connection setup
+
+<Steps>
+  <Step title="Open a new connection">
+    Click **Open Connection** or press `⌘O` / `Ctrl+O`.
+  </Step>
+  <Step title="Select the protocol">
+    Choose **Nextcloud** or **ownCloud** from the dropdown.
+  </Step>
+  <Step title="Enter connection details">
+    - **Server** — Your Nextcloud or ownCloud instance hostname (for example `cloud.example.com`).
+    - **Path** — The WebDAV path for your user, typically `/remote.php/dav/files/yourusername/`.
+    - **Username** and **Password** — Your Nextcloud/ownCloud credentials, or an app password if two-factor authentication is enabled.
+  </Step>
+</Steps>
+
+<Tip>
+  Nextcloud and ownCloud both support **app passwords** (Settings → Security → Devices & Sessions) as an alternative to your main account password. Using an app password avoids exposing your primary credentials and works with two-factor authentication.
+</Tip>
+
+ownCloud supports OAuth 2.0 login, and resumable uploads via Nextcloud's TUS protocol are supported for large file transfers.
+
+---
+
+## SMB
+
+Cyberduck 8.7 and later includes **SMB (Server Message Block)** support for connecting to Windows file shares, NAS devices, and Samba servers.
+
+### Connection setup
+
+<Steps>
+  <Step title="Open a new connection">
+    Click **Open Connection** or press `⌘O` / `Ctrl+O`.
+  </Step>
+  <Step title="Select the protocol">
+    Choose **SMB (Server Message Block)**.
+  </Step>
+  <Step title="Enter connection details">
+    - **Server** — Hostname or IP address of the SMB server.
+    - **Username** — Domain and username in the format `DOMAIN\username` or just `username`.
+    - **Password** — Your Windows/Samba password.
+  </Step>
+</Steps>
+
+SMB connections use signing and encryption by default. Encryption can be disabled in preferences if required by the server configuration.
+
+## Related
+
+- [Bookmarks](/configuration/bookmarks)
+- [Cryptomator client-side encryption](/security/cryptomator)
+- [File transfers](/transfers/upload-download)

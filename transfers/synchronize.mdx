@@ -1,0 +1,120 @@
+---
+title: "Synchronize local and remote folders with Cyberduck"
+description: "Use Cyberduck to synchronize local and remote folders, transferring only changed or missing files. Supports download-only, upload-only, and mirror sync modes."
+---
+
+Synchronization compares a local directory with a remote folder and transfers only the files that differ or are missing from one side. Unlike a plain upload or download, it can operate bidirectionally, making it suitable for keeping a working directory aligned with a server without re-transferring unchanged files.
+
+## How synchronization works
+
+When you start a synchronization, Cyberduck walks both the local directory tree and the remote folder tree, building a combined list of all paths. For each file it finds, it compares the local and remote versions using the available comparison methods (size, checksum, modification date) and assigns one of four outcomes:
+
+| Outcome | Meaning |
+|---|---|
+| `remote` | The remote file is newer or the local file does not exist. |
+| `local` | The local file is newer or the remote file does not exist. |
+| `equal` | Both sides are identical (or it is a directory). |
+| `notequal` | Files differ in size, checksum, or timestamp but neither is clearly newer. |
+
+Files with an `equal` outcome are skipped. Files with a `local` or `remote` outcome are transferred in the direction that matches the chosen sync action (see below). Directories are never compared—only their contents are.
+
+<Note>
+  The comparison logic first checks file size. If sizes are equal, it computes and compares a checksum when the remote server provides one. If no checksum is available, it falls back to the modification timestamp.
+</Note>
+
+## File comparison methods
+
+Cyberduck uses a chained comparison pipeline:
+
+<CardGroup cols={3}>
+  <Card title="Size" icon="weight-scale">
+    Compares byte counts. If sizes differ, the side with zero bytes is considered out of date.
+  </Card>
+  <Card title="Checksum" icon="hashtag">
+    When the remote server provides an ETag or content hash, Cyberduck computes the matching hash locally and compares. Protocols that support this include S3 (ETag/MD5), WebDAV (Content-MD5), and others.
+  </Card>
+  <Card title="Timestamp" icon="clock">
+    Compares modification dates at one-second resolution. The side with the earlier modification date is considered out of date.
+  </Card>
+</CardGroup>
+
+## Starting a synchronization in the GUI
+
+<Steps>
+  <Step title="Connect to your server">
+    Open Cyberduck and connect to the remote host. Navigate to the folder you want to synchronize with a local directory.
+  </Step>
+  <Step title="Open the Synchronize dialog">
+    Choose **File > Synchronize...** from the menu bar. A folder picker opens; select the local directory to pair with the currently selected remote folder and click **Choose**.
+  </Step>
+  <Step title="Choose a sync direction">
+    Cyberduck prompts you for the transfer action to apply:
+
+    | Action | What it does |
+    |---|---|
+    | **Download** | Download changed and missing files from remote to local. Files that exist only locally are left untouched. |
+    | **Upload** | Upload changed and missing files from local to remote. Files that exist only remotely are left untouched. |
+    | **Mirror** | Download and upload simultaneously: files newer on either side are transferred to the other, making both sides identical. |
+
+  </Step>
+  <Step title="Review and confirm">
+    The transfer queue opens and shows each file that will be transferred along with the direction arrow. Click **Resume** (or wait for the transfer to start) to proceed.
+  </Step>
+</Steps>
+
+<Warning>
+  The **Mirror** action transfers in both directions. Any file that exists only on one side will be copied to the other. This cannot be automatically undone, so review the transfer queue carefully before confirming.
+</Warning>
+
+## CLI synchronization with duck
+
+Use `--synchronize` to run a sync from the command line. The command takes a remote URL and a local directory path.
+
+<CodeGroup>
+
+```bash Mirror local directory with remote folder
+duck --synchronize sftp://user@example.com/project/ /local/project/
+```
+
+```bash Download only: pull changes from remote to local
+duck --synchronize sftp://user@example.com/project/ /local/project/ --existing download
+```
+
+```bash Upload only: push local changes to remote
+duck --synchronize sftp://user@example.com/project/ /local/project/ --existing upload
+```
+
+```bash Synchronize an S3 bucket with a local archive folder
+duck --synchronize s3://mybucket/archive/ /local/archive/
+```
+
+```bash Synchronize with verbose output to trace each file decision
+duck --synchronize sftp://user@example.com/site/ /local/site/ --verbose
+```
+
+</CodeGroup>
+
+Pass `--existing` with `download`, `upload`, or `mirror` to set the sync direction non-interactively:
+
+```bash
+duck --synchronize sftp://user@example.com/data/ /local/data/ --existing mirror
+```
+
+<Tip>
+  Add `--quiet` to suppress progress messages when running `duck --synchronize` in a cron job or CI pipeline. Errors are still written to stderr.
+</Tip>
+
+## Preserving permissions and metadata during sync
+
+By default, synchronization transfers file content only. To also carry over UNIX permissions, ACLs, timestamps, and custom metadata, add the `--preserve` flag:
+
+```bash
+duck --synchronize sftp://user@example.com/project/ /local/project/ --preserve
+```
+
+See [Preserve permissions, ACLs, and metadata](/transfers/permissions-metadata) for a full description of what `--preserve` covers and which protocols support each attribute.
+
+## Related pages
+
+- [Upload and download files](/transfers/upload-download) — one-time transfers without comparison
+- [Preserve permissions, ACLs, and metadata](/transfers/permissions-metadata) — carry attributes across transfers

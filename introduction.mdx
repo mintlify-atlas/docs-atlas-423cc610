@@ -1,0 +1,165 @@
+---
+title: "Cyberduck: libre file transfer client for Mac and Windows"
+description: "Cyberduck is an open source file transfer client for macOS and Windows supporting FTP, SFTP, S3, Azure, Google Drive, Backblaze B2, and 15+ cloud protocols."
+---
+
+Cyberduck is a free and open source file transfer client for macOS and Windows. It supports a wide range of protocols — from classic FTP and SFTP to modern cloud storage providers — through a single, consistent interface. A command-line companion tool called `duck` extends the same capabilities to Linux, macOS, and Windows terminals.
+
+## Supported protocols
+
+Cyberduck ships with connection profiles for the following services out of the box:
+
+<CardGroup cols={3}>
+  <Card title="FTP & FTPS" icon="server">
+    Standard FTP and FTP over TLS for web hosting and legacy servers.
+  </Card>
+  <Card title="SFTP" icon="lock">
+    Secure File Transfer Protocol over SSH, with password and public key authentication.
+  </Card>
+  <Card title="WebDAV" icon="globe">
+    WebDAV (HTTP and HTTPS) for web-based file access and collaboration tools.
+  </Card>
+  <Card title="Amazon S3" icon="aws">
+    Amazon S3 with support for all AWS regions, IAM Identity Center, and storage classes.
+  </Card>
+  <Card title="Microsoft Azure" icon="microsoft">
+    Azure Blob Storage with OAuth 2.0 authentication.
+  </Card>
+  <Card title="Google Drive" icon="google">
+    Google Drive via OAuth, defaulting to the My Drive root.
+  </Card>
+  <Card title="Google Cloud Storage" icon="google">
+    Google Cloud Storage buckets via the Google APIs.
+  </Card>
+  <Card title="Backblaze B2" icon="hard-drive">
+    Backblaze B2 Cloud Storage using an Account ID and Application Key.
+  </Card>
+  <Card title="Dropbox" icon="box">
+    Dropbox via OAuth 2.0 — no username or password required.
+  </Card>
+  <Card title="Microsoft OneDrive" icon="microsoft">
+    OneDrive personal and business accounts via OAuth 2.0.
+  </Card>
+  <Card title="Microsoft SharePoint" icon="share-nodes">
+    SharePoint Online document libraries via the Microsoft Graph API.
+  </Card>
+  <Card title="OpenStack Swift" icon="cloud">
+    OpenStack Object Storage with Keystone 2 and Keystone 3 authentication.
+  </Card>
+  <Card title="Nextcloud" icon="cloud">
+    Nextcloud file access over the WebDAV protocol.
+  </Card>
+  <Card title="ownCloud" icon="cloud">
+    ownCloud servers over WebDAV.
+  </Card>
+  <Card title="SMB" icon="network-wired">
+    SMB (Server Message Block) for Windows file shares and NAS devices.
+  </Card>
+  <Card title="Box" icon="box">
+    Box cloud storage.
+  </Card>
+  <Card title="Files.com" icon="file">
+    Files.com managed file transfer platform.
+  </Card>
+  <Card title="DRACOON" icon="shield">
+    DRACOON secure enterprise file service via OAuth.
+  </Card>
+  <Card title="Rackspace" icon="cloud">
+    Rackspace Cloud Files (US region) via OpenStack Swift.
+  </Card>
+</CardGroup>
+
+<Note>
+  Additional profiles — including S3-compatible providers, iRODS, and many more — are available in **Preferences → Profiles** and are maintained in a [separate repository](https://github.com/iterate-ch/profiles).
+</Note>
+
+## Platforms
+
+Cyberduck runs on **macOS** and **Windows**. The `duck` command-line interface supports **Linux**, **macOS**, and **Windows**, making it suitable for automated transfers and scripting in CI/CD pipelines.
+
+For CLI installation and usage, see [CLI installation](/cli/installation).
+
+## Key features
+
+<CardGroup cols={2}>
+  <Card title="Bookmarks" icon="bookmark" href="/configuration/bookmarks">
+    Save connection details and credentials as bookmarks for one-click reconnection.
+  </Card>
+  <Card title="Connection profiles" icon="plug" href="/configuration/connection-profiles">
+    Use bundled profiles or install additional ones to connect to any S3-compatible or WebDAV service.
+  </Card>
+  <Card title="File transfers" icon="arrow-up-arrow-down" href="/transfers/upload-download">
+    Upload and download files and folders with drag-and-drop, queued transfers, and resume support.
+  </Card>
+  <Card title="Folder synchronization" icon="rotate" href="/transfers/synchronize">
+    Mirror local and remote directories, uploading only changed files.
+  </Card>
+  <Card title="Cryptomator encryption" icon="lock" href="/security/cryptomator">
+    Encrypt files in any cloud storage vault using Cryptomator before they leave your machine.
+  </Card>
+  <Card title="SSH key authentication" icon="key" href="/security/ssh-keys">
+    Authenticate to SFTP servers using PEM, PKCS#12, or OpenSSH private keys.
+  </Card>
+  <Card title="Permissions and metadata" icon="shield-check" href="/transfers/permissions-metadata">
+    Preserve UNIX permissions, ACLs, and file metadata during transfers.
+  </Card>
+  <Card title="CLI (duck)" icon="terminal" href="/cli/installation">
+    Automate transfers with the `duck` command-line tool on any platform.
+  </Card>
+</CardGroup>
+
+## Open source
+
+Cyberduck is licensed under the [GNU General Public License v3.0](https://www.gnu.org/licenses/gpl-3.0.en.html). Source code is available at [github.com/iterate-ch/cyberduck](https://github.com/iterate-ch/cyberduck). Pull requests are welcome.
+
+## Mountain Duck
+
+The core libraries that power Cyberduck are also used in [Mountain Duck](https://mountainduck.io/), a companion app from the same team that mounts remote servers and cloud storage as a local disk on macOS and Windows.
+
+## Maven artifacts for developers
+
+Cyberduck's protocol implementations are published to a Maven repository on Amazon S3, allowing you to embed them in your own Java projects.
+
+**Repository configuration:**
+
+```xml
+<repositories>
+  <repository>
+    <id>maven.cyberduck.io-release</id>
+    <url>https://s3-eu-west-1.amazonaws.com/repo.maven.cyberduck.io/releases</url>
+    <layout>default</layout>
+    <releases>
+      <enabled>true</enabled>
+    </releases>
+    <snapshots>
+      <enabled>false</enabled>
+    </snapshots>
+  </repository>
+</repositories>
+```
+
+**Available artifacts:**
+
+```xml
+<!-- All protocol implementations -->
+<dependency>
+  <groupId>ch.cyberduck</groupId>
+  <artifactId>protocols</artifactId>
+  <type>pom</type>
+  <version>7.1.0</version>
+</dependency>
+
+<!-- Cocoa Java bindings (macOS only) -->
+<dependency>
+  <groupId>ch.cyberduck</groupId>
+  <artifactId>binding</artifactId>
+  <version>7.1.0</version>
+</dependency>
+
+<!-- macOS platform implementations (Launch Services, Keychain, etc.) -->
+<dependency>
+  <groupId>ch.cyberduck</groupId>
+  <artifactId>libcore</artifactId>
+  <version>${project.version}</version>
+</dependency>
+```

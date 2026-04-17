@@ -1,0 +1,111 @@
+---
+title: "Connect Cyberduck to OneDrive and SharePoint Online"
+description: "Authenticate with Microsoft OAuth 2.0 to access OneDrive personal and business storage, SharePoint sites, and manage files through the Microsoft Graph API."
+---
+
+Cyberduck connects to Microsoft OneDrive and SharePoint Online using the Microsoft Graph API over HTTPS. Both protocols use OAuth 2.0 for authentication; no password is stored or transmitted. The same OAuth client (`f40bc18f-cd02-4212-b7f1-15243e4e2ad3`) is used for both protocols with different permission scopes.
+
+---
+
+## Microsoft OneDrive
+
+OneDrive is available for personal Microsoft accounts and for Microsoft 365 business accounts.
+
+### Connection setup
+
+<Steps>
+  <Step title="Open a new connection">
+    Click **Open Connection** or press `⌘O` / `Ctrl+O`.
+  </Step>
+  <Step title="Select the protocol">
+    Choose **Microsoft OneDrive** from the protocol dropdown. The server is fixed to `graph.microsoft.com` and the port to `443`.
+  </Step>
+  <Step title="Authenticate with OAuth 2.0">
+    Leave the username and password fields empty. Click **Connect** — Cyberduck opens the Microsoft login page (`login.microsoftonline.com`). Sign in and grant the requested permissions:
+
+    - `files.readwrite.all` — Read and write all files.
+    - `offline_access` — Refresh tokens without requiring re-login.
+    - `user.read` — Read your profile to identify the account.
+
+    The OAuth token is saved in the system keychain and refreshed automatically.
+  </Step>
+  <Step title="Browse your files">
+    Cyberduck opens at `/My Files` by default and lists your OneDrive contents.
+  </Step>
+</Steps>
+
+### "Add to My Files" shortcuts
+
+OneDrive items shared with you through **Add to My Files** (formerly Sync) appear in the `/My Files` folder alongside your own content. Cyberduck includes these shortcuts in the directory listing.
+
+### Personal Vault
+
+The **Personal Vault** is a special protected area in OneDrive that requires additional verification (PIN, biometric, or a two-factor code). Cyberduck excludes Personal Vault from the directory listing because it cannot be accessed without that second-factor step. To access Personal Vault contents, use the OneDrive web or desktop client.
+
+### Personal vs. business accounts
+
+The same **Microsoft OneDrive** profile in Cyberduck works for both personal Microsoft accounts and Microsoft 365 work or school accounts. The OAuth flow at `login.microsoftonline.com/common` handles account discovery automatically.
+
+---
+
+## Microsoft SharePoint
+
+SharePoint Online stores files in **document libraries** within sites. Cyberduck uses the `sharepoint` protocol to browse SharePoint sites and their libraries.
+
+### Connection setup
+
+<Steps>
+  <Step title="Open a new connection">
+    Click **Open Connection** or press `⌘O` / `Ctrl+O`.
+  </Step>
+  <Step title="Select the protocol">
+    Choose **Microsoft SharePoint** from the protocol dropdown.
+  </Step>
+  <Step title="Authenticate with OAuth 2.0">
+    Leave the username and password fields empty and click **Connect**. Cyberduck requests the following Microsoft Graph permissions:
+
+    - `sites.readwrite.all` — Read and write all site collections.
+    - `files.readwrite.all` — Read and write files in all document libraries.
+    - `user.read` — Read your profile.
+    - `offline_access` — Maintain access without re-authentication.
+
+    Sign in when prompted in the browser.
+  </Step>
+  <Step title="Browse sites and document libraries">
+    After authentication, Cyberduck displays the SharePoint sites your account has access to. Navigate into a site to see its document libraries, and then into a library to see its files and folders.
+  </Step>
+</Steps>
+
+<Note>
+  The `groupmember.read.all` permission is no longer required as of Cyberduck 9.1. If a previously saved OAuth token includes this permission, it will continue to work but is not needed for new authorizations.
+</Note>
+
+### SharePoint sites
+
+Cyberduck lists all SharePoint sites returned by the Microsoft Graph `/sites` endpoint for the authenticated user. This includes:
+
+- The root site (`/sites/root`).
+- Team sites created from Microsoft Teams.
+- Communication sites and project sites.
+- Sites shared with you by other people in your organisation.
+
+<Tip>
+  If a site does not appear in the list, verify that your account has at least read access to it in the SharePoint admin centre or through the site's permissions settings.
+</Tip>
+
+---
+
+## OAuth token management
+
+Both OneDrive and SharePoint tokens are stored in the system keychain. If you need to sign out and re-authenticate (for example, after a password change or to switch accounts), delete the saved token from:
+
+- **macOS** — Keychain Access → search for `cyberduck` or `graph.microsoft.com`.
+- **Windows** — Credential Manager → Windows Credentials → entries for Cyberduck.
+
+Then reconnect to go through the OAuth flow again.
+
+## Related
+
+- [Bookmarks](/configuration/bookmarks)
+- [Cryptomator client-side encryption](/security/cryptomator)
+- [File transfers](/transfers/upload-download)

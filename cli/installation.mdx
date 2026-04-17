@@ -1,0 +1,135 @@
+---
+title: "Install the duck CLI on Linux, macOS, and Windows today"
+description: "Download and install the duck command-line interface for Cyberduck on Linux, macOS, and Windows. No separate Java installation required — a JRE is bundled."
+---
+
+The `duck` command-line interface is the terminal counterpart to the Cyberduck GUI. It lets you upload, download, list, delete, and synchronize files against any protocol Cyberduck supports — S3, SFTP, FTP, WebDAV, Backblaze B2, Google Drive, OneDrive, and more. `duck` runs on Linux, macOS, and Windows, and ships with a bundled Java runtime so you do not need to install Java separately.
+
+## Download
+
+Download the latest release from [cyberduck.io](https://cyberduck.io/). All platform packages are listed on the download page.
+
+## Installation
+
+<Tabs>
+  <Tab title="Linux">
+    Two package formats are available for Linux: a `.deb` package for Debian-based distributions and an `.rpm` package for Red Hat-based distributions.
+
+    <Steps>
+      <Step title="Download the package">
+        Download the `.deb` or `.rpm` package from [cyberduck.io](https://cyberduck.io/).
+      </Step>
+      <Step title="Install with your package manager">
+        <CodeGroup>
+
+        ```bash apt (Debian / Ubuntu)
+        sudo apt install ./duck_*.deb
+        ```
+
+        ```bash yum (RHEL / CentOS / Fedora)
+        sudo yum localinstall duck-*.rpm
+        ```
+
+        ```bash dnf (Fedora / RHEL 8+)
+        sudo dnf install duck-*.rpm
+        ```
+
+        </CodeGroup>
+      </Step>
+      <Step title="Verify the installation">
+        ```bash
+        duck --version
+        ```
+      </Step>
+    </Steps>
+
+    <Note>
+      The Linux package bundles all required libraries. No separate Java installation is needed.
+    </Note>
+  </Tab>
+  <Tab title="macOS">
+    Two package formats are available for macOS: a `.pkg` graphical installer and a `.tar.gz` archive for manual installation.
+
+    <Steps>
+      <Step title="Download the package">
+        Download the `.pkg` or `.tar.gz` from [cyberduck.io](https://cyberduck.io/).
+      </Step>
+      <Step title="Install">
+        <CodeGroup>
+
+        ```bash .pkg installer
+        # Double-click the .pkg file, or install via command line:
+        sudo installer -pkg duck-*.pkg -target /
+        ```
+
+        ```bash .tar.gz archive
+        tar -xzf duck-*.tar.gz
+        sudo mv duck /usr/local/bin/duck
+        ```
+
+        </CodeGroup>
+      </Step>
+      <Step title="Verify the installation">
+        ```bash
+        duck --version
+        ```
+      </Step>
+    </Steps>
+
+    <Note>
+      The macOS package bundles a JDK (Eclipse Temurin 21). You do not need a system Java installation.
+    </Note>
+  </Tab>
+  <Tab title="Windows">
+    Two package formats are available for Windows: an `.exe` setup wizard and an `.msi` for silent or enterprise deployments.
+
+    <Steps>
+      <Step title="Download the package">
+        Download the `.exe` or `.msi` from [cyberduck.io](https://cyberduck.io/).
+      </Step>
+      <Step title="Install">
+        <CodeGroup>
+
+        ```bash .exe installer
+        # Run the installer and follow the setup wizard.
+        duck-installer.exe
+        ```
+
+        ```bash .msi silent install
+        msiexec /i duck.msi /quiet
+        ```
+
+        </CodeGroup>
+      </Step>
+      <Step title="Open a terminal and verify">
+        ```bash
+        duck --version
+        ```
+      </Step>
+    </Steps>
+
+    <Tip>
+      After installation the `duck` executable is added to your `PATH` automatically. Open a new Command Prompt or PowerShell window if the command is not found immediately.
+    </Tip>
+  </Tab>
+</Tabs>
+
+## Verifying the installation
+
+Run the following command from any terminal to confirm `duck` is installed and show the version number:
+
+```bash
+duck --version
+```
+
+You can also print the full help text to see every available command and option:
+
+```bash
+duck --help
+```
+
+## Next steps
+
+- Follow the [quickstart guide](/cli/quickstart) to run your first upload and download.
+- Browse the complete [command reference](/cli/commands) to see all available actions.
+- Review the [options reference](/cli/options) for flags that control authentication, transfer behavior, and output.

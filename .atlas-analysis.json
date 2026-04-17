@@ -1,28 +1,11 @@
 {
-  "$schema": "https://mintlify.com/docs.json",
-  "name": "Cyberduck",
+  "projectType": "saas",
+  "projectName": "Cyberduck",
+  "projectDescription": "Cyberduck is a libre file transfer client for macOS and Windows supporting FTP, SFTP, WebDAV, Amazon S3, Backblaze B2, Azure, OneDrive, Google Drive, and many more cloud storage providers, with a companion CLI tool for Linux, macOS, and Windows.",
   "theme": "almond",
-  "colors": {
-    "primary": "#edc52b",
-    "light": "#f9f8ec",
-    "dark": "#4e4c41"
-  },
-  "favicon": "https://media.brand.dev/9728a400-2bd5-4000-a130-cb2c767f8dee.png",
-  "logo": {
-    "light": "https://media.brand.dev/3513a1b1-79e4-4e5d-93f0-5b1718d6695d.png",
-    "dark": "https://media.brand.dev/3513a1b1-79e4-4e5d-93f0-5b1718d6695d.png"
-  },
-  "navbar": {
-    "primary": {
-      "type": "github",
-      "href": "https://github.com/iterate-ch/cyberduck"
-    }
-  },
-  "footer": {
-    "socials": {
-      "github": "https://github.com/iterate-ch/cyberduck"
-    }
-  },
+  "primaryColor": "#edc52b",
+  "lightColor": "#f9f8ec",
+  "darkColor": "#4e4c41",
   "navigation": {
     "tabs": [
       {
@@ -95,5 +78,38 @@
         ]
       }
     ]
-  }
+  },
+  "keyFeatures": [
+    "GUI file transfer client for macOS and Windows",
+    "CLI (duck) for Linux, macOS, and Windows",
+    "Supports FTP, FTPS, SFTP, WebDAV, and 15+ cloud storage providers",
+    "Cryptomator vault integration for end-to-end encryption",
+    "Connection profiles for easy server configuration",
+    "Bookmark management for saved connections",
+    "Folder synchronization",
+    "CDN integration (CloudFront invalidation)",
+    "OAuth 2.0 authentication for cloud providers",
+    "SSH key and certificate-based authentication"
+  ],
+  "publicApiSurface": [
+    "duck --upload <url> <file>",
+    "duck --download <url> <file>",
+    "duck --list <url>",
+    "duck --longlist <url>",
+    "duck --delete <url>",
+    "duck --mkdir <url>",
+    "duck --copy <url> <url>",
+    "duck --move <url> <file>",
+    "duck --synchronize <url> <directory>",
+    "duck --purge <url>",
+    "duck --username / --password / --identity",
+    "duck --profile <profile>",
+    "duck --vault <path>",
+    "duck --existing <action>",
+    "duck --parallel <connections>",
+    "duck --throttle <bytes-per-second>",
+    "duck --preserve",
+    "duck --retry [count]",
+    "duck --verbose / --quiet / --debug"
+  ]
 }
